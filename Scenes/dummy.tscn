@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://x5hwke62l6si"]
+
+[ext_resource type="Texture2D" uid="uid://ytr5a1s5h1dj" path="res://Sprites/DummySprite.png" id="1_5d6mj"]
+[ext_resource type="Script" uid="uid://dsy1cdxerffu4" path="res://Scripts/dummy.gd" id="1_s0uyp"]
+[ext_resource type="Script" uid="uid://dnhkarykqlvae" path="res://Scripts/HealthComponent.gd" id="1_x66xh"]
+[ext_resource type="PackedScene" uid="uid://c5gqtu2t2tunv" path="res://Scenes/ui/health_bar.tscn" id="4_3clv1"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_fcnqv"]
+radius = 15.0
+height = 46.0
+
+[node name="Dummy" type="StaticBody2D" unique_id=454250716]
+collision_layer = 5
+script = ExtResource("1_s0uyp")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1104906702]
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("1_5d6mj")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=242552611]
+position = Vector2(-1, 5)
+shape = SubResource("CapsuleShape2D_fcnqv")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=2082194352]
+script = ExtResource("1_x66xh")
+max_health = 1000
+
+[node name="HealthBarPosition" type="Marker2D" parent="." unique_id=1416857859]
+position = Vector2(-20.5, -35)
+
+[node name="HealthBar" parent="HealthBarPosition" unique_id=301337473 instance=ExtResource("4_3clv1")]
+scale = Vector2(1.5, 1.5)

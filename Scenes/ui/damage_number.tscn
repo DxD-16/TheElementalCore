@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://l0t2fvxh4gse"]
+
+[ext_resource type="Script" uid="uid://dffug5wwvjurw" path="res://Scripts/damage_number.gd" id="1_m808r"]
+[ext_resource type="FontFile" uid="uid://cjhn57hrl5ls" path="res://OtherRecources/PixelifySans-VariableFont_wght.ttf" id="2_gasoy"]
+
+[node name="DamageNumber" type="Node2D" unique_id=141638542]
+script = ExtResource("1_m808r")
+rise_distance = 400.0
+rise_duration = 0.5
+fade_duration = 0.5
+
+[node name="RichTextLabel" type="RichTextLabel" parent="." unique_id=1558747603]
+offset_left = -300.0
+offset_top = -80.0
+offset_right = 300.0
+offset_bottom = 80.0
+theme_override_colors/default_color = Color(0.78039217, 0.3137255, 0.41960785, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("2_gasoy")
+theme_override_font_sizes/normal_font_size = 128
+fit_content = true
