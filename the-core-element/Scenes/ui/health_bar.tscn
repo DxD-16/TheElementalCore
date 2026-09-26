@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://c5gqtu2t2tunv"]
+
+[ext_resource type="Script" uid="uid://b7luwqb6fc42m" path="res://Scripts/main_hp_bar.gd" id="1_78m4n"]
+[ext_resource type="Texture2D" uid="uid://onp04xc4g4sk" path="res://Sprites/UiElements/HealthBar/pixil-frame-0 (2).png" id="1_wjrfg"]
+[ext_resource type="Texture2D" uid="uid://b21xioicwpy4v" path="res://Sprites/UiElements/HealthBar/pixil-frame-0 (3).png" id="2_ap322"]
+[ext_resource type="Texture2D" uid="uid://ovx08afvha4" path="res://Sprites/UiElements/HealthBar/pixil-frame-0 (4).png" id="4_4vfrx"]
+
+[node name="HealthBar" type="Marker2D" unique_id=1168271397]
+
+[node name="BarFrame" type="TextureRect" parent="." unique_id=2123751107]
+offset_right = 24.0
+offset_bottom = 6.0
+texture = ExtResource("1_wjrfg")
+stretch_mode = 2
+
+[node name="DelayHPBar" type="TextureProgressBar" parent="." unique_id=1955770911]
+offset_right = 40.0
+offset_bottom = 40.0
+step = 0.5
+texture_progress = ExtResource("4_4vfrx")
+texture_progress_offset = Vector2(1, 1)
+
+[node name="MainHPBar" type="TextureProgressBar" parent="." unique_id=834864071 node_paths=PackedStringArray("delay_bar", "bar_frame")]
+offset_right = 40.0
+offset_bottom = 40.0
+step = 0.5
+texture_progress = ExtResource("2_ap322")
+texture_progress_offset = Vector2(1, 1)
+script = ExtResource("1_78m4n")
+delay_bar = NodePath("../DelayHPBar")
+bar_frame = NodePath("../BarFrame")
