@@ -7,11 +7,12 @@ signal attack_step_started(combo_step: int)
 
 @export_category("Combo Settings")
 @export var combo_reset_time: float = 0.6  # Время, за которое комбо сбрасывается, если не бить дальше
+@export var attack_speed: float = 1.0
 
 # Данные урона и отталкивания для каждого из 4 ударов
 @export var damage_list: Array[int] = [10, 18, 20, 40]
 @export var knockback_list: Array[float] = [100.0, 150.0, 200.0, 400.0]
-@export var attack_time_list: Array[float] = [0.4, 0.4, 0.5, 0.8]
+@export var attack_time_list: Array[float] = [0.4, 0.4, 0.6, 0.8]
 
 var current_combo: int = 0          # Текущий шаг комбо (0, 1, 2, 3)
 var is_attacking: bool = false      # Идет ли сейчас анимация/удар
@@ -41,7 +42,6 @@ func execute_attack() -> void:
 	hit_enemies_this_swing.clear()
 	
 	var safe_combo: int = clampi(current_combo, 0, damage_list.size() - 1)
-	print("Выполняется удар комбо №: ", safe_combo + 1, " с уроном: ", damage_list[safe_combo])
 	
 	# Включаем нужный хитбокс под текущий удар
 	disable_all_hitboxes()
@@ -51,7 +51,7 @@ func execute_attack() -> void:
 	attack_step_started.emit(safe_combo)
 	
 	# Длительность одного удара
-	await get_tree().create_timer(attack_time_list[safe_combo]).timeout
+	await get_tree().create_timer(attack_time_list[safe_combo] / attack_speed).timeout
 	
 	finish_attack_step()
 

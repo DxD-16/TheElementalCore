@@ -3,6 +3,8 @@ extends State
 
 @export var attack_duration: float = 0.3
 
+
+
 func enter() -> void:
 	if player:
 		var direction := Input.get_axis("ui_left", "ui_right")
