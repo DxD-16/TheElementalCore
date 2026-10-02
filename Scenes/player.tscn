@@ -9,6 +9,8 @@
 [ext_resource type="Script" uid="uid://cbatnbqr2jicy" path="res://Scripts/jump_state.gd" id="6_jump"]
 [ext_resource type="Script" uid="uid://q7bpdj2e2cr7" path="res://Scripts/roll_state.gd" id="7_roll"]
 [ext_resource type="Script" uid="uid://b7er2nfjarfdt" path="res://Scripts/fists.gd" id="10_fs7ks"]
+[ext_resource type="Script" uid="uid://dnhkarykqlvae" path="res://Scripts/HealthComponent.gd" id="11_hpcomp"]
+[ext_resource type="Script" uid="uid://wcapomms6fnd" path="res://Scripts/death_state.gd" id="death_state_script"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_g4v7s"]
 radius = 4.7222214
@@ -166,6 +168,42 @@ region = Rect2(898, 835, 124, 60)
 [sub_resource type="AtlasTexture" id="AtlasTexture_ketbw"]
 atlas = ExtResource("2_6t5aa")
 region = Rect2(1026, 835, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4grkl"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(898, 963, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6yrdb"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(1026, 963, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ue0p1"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(1154, 963, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_isbcs"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(1282, 963, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_142e3"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(1410, 963, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ts2c8"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(1538, 963, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hcgbs"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(1666, 963, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mpfyg"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(1794, 963, 124, 60)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_un823"]
+atlas = ExtResource("2_6t5aa")
+region = Rect2(1922, 963, 124, 60)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qpa8y"]
 atlas = ExtResource("2_6t5aa")
@@ -510,6 +548,38 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_4grkl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6yrdb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ue0p1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_isbcs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_142e3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ts2c8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hcgbs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mpfyg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_un823")
+}],
+"loop": 0,
+"name": &"PlayerDeath",
+"speed": 9.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_qpa8y")
 }, {
 "duration": 1.0,
@@ -704,11 +774,11 @@ animations = [{
 [node name="Player" type="CharacterBody2D" unique_id=1660670300]
 scale = Vector2(3, 3)
 script = ExtResource("1_tx1dd")
-speed = 300.0
-jump_velocity = -400.0
-acceleration = 1000.0
-friction = 1000.0
 DoubleJumpAvailable = true
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1860234512]
+script = ExtResource("11_hpcomp")
+max_health = 200
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1548392423]
 position = Vector2(1, 0.625)
@@ -733,6 +803,7 @@ script = ExtResource("6_jump")
 vertical_land_threshold = 250.0
 
 [node name="DeathState" type="Node" parent="StateMachine" unique_id=1672964482]
+script = ExtResource("death_state_script")
 
 [node name="RollState" type="Node" parent="StateMachine" unique_id=909058797]
 script = ExtResource("7_roll")
@@ -782,7 +853,6 @@ disabled = true
 position = Vector2(6.9999995, -6.9999995)
 scale = Vector2(0.49999997, 0.49999997)
 sprite_frames = SubResource("SpriteFrames_g4v7s")
-animation = &"PlayerAttack_4"
-frame_progress = 0.5250168
+animation = &"PlayerFalling"
 
 [connection signal="body_entered" from="Body/WeaponManager/Fists/AttackArea" to="Body/WeaponManager/Fists" method="_on_attack_area_body_entered"]

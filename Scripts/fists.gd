@@ -25,7 +25,32 @@ var hit_enemies_this_swing: Array[Node2D] = [] # Список уже задет�
 @onready var shapes: Array[Node] = $AttackArea.get_children() # Все коллайдеры ударов
 
 func _ready() -> void:
+	_load_config()
 	disable_all_hitboxes()
+
+func _load_config() -> void:
+	if ConfigManager:
+		combo_reset_time = ConfigManager.get_float("weapons", "fists.combo_reset_time", combo_reset_time)
+		attack_speed = ConfigManager.get_float("weapons", "fists.attack_speed", attack_speed)
+
+		var dmg_arr: Array = ConfigManager.get_array("weapons", "fists.damage_list", [])
+		if not dmg_arr.is_empty():
+			damage_list.clear()
+			for d in dmg_arr:
+				damage_list.append(int(d))
+
+		var kb_arr: Array = ConfigManager.get_array("weapons", "fists.knockback_list", [])
+		if not kb_arr.is_empty():
+			knockback_list.clear()
+			for kb in kb_arr:
+				knockback_list.append(float(kb))
+
+		var time_arr: Array = ConfigManager.get_array("weapons", "fists.attack_time_list", [])
+		if not time_arr.is_empty():
+			attack_time_list.clear()
+			for t in time_arr:
+				attack_time_list.append(float(t))
+
 
 func _process(delta: float) -> void:
 	# Обработка таймера сброса комбо
@@ -51,7 +76,8 @@ func execute_attack() -> void:
 	attack_step_started.emit(safe_combo)
 	
 	# Длительность одного удара
-	await get_tree().create_timer(attack_time_list[safe_combo] / attack_speed).timeout
+	var spd: float = attack_speed if attack_speed > 0.001 else 1.0
+	await get_tree().create_timer(attack_time_list[safe_combo] / spd).timeout
 	
 	finish_attack_step()
 

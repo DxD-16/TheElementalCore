@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://onp04xc4g4sk"
-path="res://.godot/imported/pixil-frame-0 (2).png-d8c5a33d096b676de769e854383d1c20.ctex"
+uid="uid://xiusftu8stui"
+path="res://.godot/imported/HpDelayBar.png-b2f53d3e9cdf6de40da609182b3101ed.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Sprites/UiElements/HealthBar/pixil-frame-0 (2).png"
-dest_files=["res://.godot/imported/pixil-frame-0 (2).png-d8c5a33d096b676de769e854383d1c20.ctex"]
+source_file="res://Sprites/UiElements/PlayerHealthBar/HpDelayBar.png"
+dest_files=["res://.godot/imported/HpDelayBar.png-b2f53d3e9cdf6de40da609182b3101ed.ctex"]
 
 [params]
 

@@ -2,11 +2,14 @@ extends TextureProgressBar
 
 @export var delay_bar: TextureProgressBar
 @export var bar_frame: TextureRect
+@export var delay_interval: float = 0.4
+@export var fade_duration: float = 0.5
 
 var health_component: HealthComponent
 var tween: Tween
 
 func _ready() -> void:
+	_load_config()
 	# Автоматически ищем HealthComponent внутри корневого узла врага (owner)
 	if owner:
 		health_component = owner.find_child("HealthComponent", true, false) as HealthComponent
@@ -34,6 +37,11 @@ func _ready() -> void:
 	else:
 		push_warning("HealthBar не смог автоматически найти HealthComponent у врага: ", name)
 
+func _load_config() -> void:
+	if ConfigManager:
+		delay_interval = ConfigManager.get_float("ui_effects", "health_bar.delay_interval", delay_interval)
+		fade_duration = ConfigManager.get_float("ui_effects", "health_bar.fade_duration", fade_duration)
+
 func _on_health_changed(current_health: int) -> void:
 	var previous_value = value
 	value = current_health
@@ -47,8 +55,8 @@ func _on_health_changed(current_health: int) -> void:
 			tween.kill()
 		
 		tween = create_tween().set_parallel(false)
-		tween.tween_interval(0.4) # Задержка перед убыванием желтого следа
-		tween.tween_property(delay_bar, "value", current_health, 0.5) # Плавное убывание
+		tween.tween_interval(delay_interval) # Задержка перед убыванием желтого следа
+		tween.tween_property(delay_bar, "value", current_health, fade_duration) # Плавное убывание
 
 func check_visibility() -> void:
 	if health_component:

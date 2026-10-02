@@ -1,0 +1,9 @@
+{
+  "fists": {
+	"combo_reset_time": 0.6,
+	"attack_speed": 1.0,
+	"damage_list": [10, 18, 20, 40],
+	"knockback_list": [100.0, 150.0, 200.0, 400.0],
+	"attack_time_list": [0.4, 0.4, 0.6, 0.8]
+  }
+}

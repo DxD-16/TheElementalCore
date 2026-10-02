@@ -15,6 +15,15 @@ var fall_timer: float = 0.0
 var last_air_velocity: Vector2 = Vector2.ZERO
 var last_height_y: float = 0.0
 
+func _ready() -> void:
+	_load_config()
+
+func _load_config() -> void:
+	if ConfigManager:
+		fall_anim_delay = ConfigManager.get_float("player", "states.jump.fall_anim_delay", fall_anim_delay)
+		recovery_min_fall_time = ConfigManager.get_float("player", "states.jump.recovery_min_fall_time", recovery_min_fall_time)
+		vertical_land_threshold = ConfigManager.get_float("player", "states.jump.vertical_land_threshold", vertical_land_threshold)
+
 func enter() -> void:
 	fall_timer = 0.0
 	phase = Phase.ASCEND
@@ -66,6 +75,9 @@ func _start_landing() -> void:
 
 	# Косое приземление → кувырок с продолжением движения
 	if horizontal_speed > vertical_land_threshold:
+		var roll := state_machine.get_node_or_null("RollState") as RollState
+		if roll:
+			roll.is_landing_roll = true
 		state_machine.transition_to("RollState")
 		return
 

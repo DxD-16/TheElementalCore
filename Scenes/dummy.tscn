@@ -9,6 +9,10 @@
 radius = 15.0
 height = 46.0
 
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_contact"]
+radius = 16.0
+height = 48.0
+
 [node name="Dummy" type="StaticBody2D" unique_id=454250716]
 collision_layer = 5
 script = ExtResource("1_s0uyp")
@@ -30,3 +34,13 @@ position = Vector2(-20.5, -35)
 
 [node name="HealthBar" parent="HealthBarPosition" unique_id=301337473 instance=ExtResource("4_3clv1")]
 scale = Vector2(1.5, 1.5)
+
+[node name="ContactArea" type="Area2D" parent="." unique_id=1987654321]
+collision_layer = 0
+
+[node name="ContactShape" type="CollisionShape2D" parent="ContactArea" unique_id=1234567890]
+position = Vector2(-1, 5)
+shape = SubResource("CapsuleShape2D_contact")
+
+[connection signal="body_entered" from="ContactArea" to="." method="_on_body_entered"]
+[connection signal="body_exited" from="ContactArea" to="." method="_on_body_exited"]

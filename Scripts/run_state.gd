@@ -14,6 +14,12 @@ func physics_update(_delta: float) -> void:
 		state_machine.transition_to("AttackState")
 		return
 
+	if Input.is_action_just_pressed("dash"):
+		var roll_state = state_machine.get_node_or_null("RollState") as RollState
+		if roll_state and roll_state.can_roll():
+			state_machine.transition_to("RollState")
+			return
+
 	# Если игрок отпустил клавиши движения — возвращаемся в покой
 	var direction := Input.get_axis("ui_left", "ui_right")
 	if direction == 0:

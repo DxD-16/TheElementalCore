@@ -7,6 +7,8 @@ signal died
 var current_health: int
 
 func _ready() -> void:
+	if ConfigManager and max_health == 100:
+		max_health = ConfigManager.get_int("entities", "default_health.max_health", max_health)
 	current_health = max_health
 
 func take_damage(damage: int) -> void:
