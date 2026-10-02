@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://cm7qo574bp66k" path="res://Scripts/attack_state.gd" id="5_3smsa"]
 [ext_resource type="Script" uid="uid://cbatnbqr2jicy" path="res://Scripts/jump_state.gd" id="6_jump"]
 [ext_resource type="Script" uid="uid://q7bpdj2e2cr7" path="res://Scripts/roll_state.gd" id="7_roll"]
+[ext_resource type="Script" path="res://Scripts/landing_roll_state.gd" id="landing_roll_state"]
 [ext_resource type="Script" uid="uid://b7er2nfjarfdt" path="res://Scripts/fists.gd" id="10_fs7ks"]
 [ext_resource type="Script" uid="uid://dnhkarykqlvae" path="res://Scripts/HealthComponent.gd" id="11_hpcomp"]
 [ext_resource type="Script" uid="uid://wcapomms6fnd" path="res://Scripts/death_state.gd" id="death_state_script"]
@@ -807,6 +808,9 @@ script = ExtResource("death_state_script")
 
 [node name="RollState" type="Node" parent="StateMachine" unique_id=909058797]
 script = ExtResource("7_roll")
+
+[node name="LandingRollState" type="Node" parent="StateMachine"]
+script = ExtResource("landing_roll_state")
 
 [node name="AttackState" type="Node" parent="StateMachine" unique_id=1592831571]
 script = ExtResource("5_3smsa")

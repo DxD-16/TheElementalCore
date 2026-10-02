@@ -12,10 +12,12 @@ func _ready() -> void:
 	current_health = max_health
 
 func take_damage(damage: int) -> void:
-	current_health = max_health if current_health - damage > max_health else current_health - damage
-	current_health = max(0, current_health)
-	
+	current_health = clampi(current_health - damage, 0, max_health)
 	health_changed.emit(current_health)
-	
+
 	if current_health <= 0:
 		died.emit()
+
+func heal(amount: int) -> void:
+	current_health = clampi(current_health + amount, 0, max_health)
+	health_changed.emit(current_health)

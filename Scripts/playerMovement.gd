@@ -28,19 +28,34 @@ extends CharacterBody2D
 
 ## Параметры здоровья и реакции на урон (из player.json > health)
 var iframes_after_dmg: float = 0.2
-var flash_color: Color = Color.WHITE
 var flash_duration: float = 0.15
 
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var remaining_air_jumps: int = 0
 var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
+var max_fall_speed: float = 1200.0
 
 ## Таймер неуязвимости после получения урона
 var _iframe_timer: float = 0.0
-var _flash_tween: Tween
+var _flash_effect_id: int = 0
+var _flash_material: ShaderMaterial
+var _hit_stop_id: int = 0
+var _hit_stop_active: bool = false
+var _hit_stop_previous_scale: float = 1.0
+var _squash_tween: Tween
 var is_dead: bool = false
 
+var jump_stretch_x: float = 0.94
+var jump_stretch_y: float = 1.08
+var landing_squash_x: float = 1.08
+var landing_squash_y: float = 0.92
+var squash_duration: float = 0.1
+var squash_recovery_duration: float = 0.14
+
+const HIT_STOP_DURATION: float = 0.2
+const HIT_FLASH_INTERVAL: float = 0.04
+const WHITE_FLASH_SHADER = preload("res://Scripts/white_flash.gdshader")
 const DAMAGE_NUMBER_SCENE = preload("res://Scenes/ui/damage_number.tscn")
 ## Цвет цифр урона игрока — оранжевый #de9e41
 const PLAYER_DAMAGE_COLOR := Color(0.871, 0.620, 0.255)
@@ -53,13 +68,26 @@ func _ready() -> void:
 	add_to_group("Player")
 	_load_config()
 	_setup_dash_input()
+	_setup_white_flash()
 
 	var health := get_node_or_null("HealthComponent") as HealthComponent
 	if health:
 		health.died.connect(_on_died)
 
+func _exit_tree() -> void:
+	if _hit_stop_active:
+		Engine.time_scale = _hit_stop_previous_scale
+		_hit_stop_active = false
+		_hit_stop_id += 1
+
 func _load_config() -> void:
 	if ConfigManager:
+		gravity = ConfigManager.get_float("physics", "gravity", gravity)
+		var configured_max_fall_speed := ConfigManager.get_float("physics", "max_fall_speed", max_fall_speed)
+		if configured_max_fall_speed > 0.0:
+			max_fall_speed = configured_max_fall_speed
+		else:
+			push_warning("physics.max_fall_speed must be greater than zero; using %.1f" % max_fall_speed)
 		speed = ConfigManager.get_float("player", "movement.speed", speed)
 		jump_velocity = ConfigManager.get_float("player", "movement.jump_velocity", jump_velocity)
 		acceleration = ConfigManager.get_float("player", "movement.acceleration", acceleration)
@@ -71,12 +99,15 @@ func _load_config() -> void:
 		air_jumps = ConfigManager.get_int("player", "movement.air_jumps", air_jumps)
 		air_jump_strength = ConfigManager.get_float("player", "movement.air_jump_strength", air_jump_strength)
 		attack_move_speed_multiplier = ConfigManager.get_float("player", "movement.attack_move_speed_multiplier", attack_move_speed_multiplier)
+		jump_stretch_x = ConfigManager.get_float("player", "visuals.jump_stretch_x", jump_stretch_x)
+		jump_stretch_y = ConfigManager.get_float("player", "visuals.jump_stretch_y", jump_stretch_y)
+		landing_squash_x = ConfigManager.get_float("player", "visuals.landing_squash_x", landing_squash_x)
+		landing_squash_y = ConfigManager.get_float("player", "visuals.landing_squash_y", landing_squash_y)
+		squash_duration = ConfigManager.get_float("player", "visuals.squash_duration", squash_duration)
+		squash_recovery_duration = ConfigManager.get_float("player", "visuals.squash_recovery_duration", squash_recovery_duration)
 		# Параметры здоровья
 		iframes_after_dmg = ConfigManager.get_float("player", "health.iframes_after_dmg", iframes_after_dmg)
 		flash_duration = ConfigManager.get_float("player", "health.flash_duration", flash_duration)
-		var fc_str: String = ConfigManager.get_string("player", "health.flash_color", "")
-		if fc_str.is_valid_html_color():
-			flash_color = Color(fc_str)
 		# Загружаем max_health и применяем к HealthComponent
 		var max_hp: int = ConfigManager.get_int("player", "health.max_health", 200)
 		var hc := get_node_or_null("HealthComponent") as HealthComponent
@@ -119,22 +150,84 @@ func take_damage(amount: int, hit_pos: Vector2 = Vector2.ZERO) -> void:
 	_play_flash_effect()
 	# Спавн оранжевых цифр урона
 	if amount > 0:
+		_start_hit_stop()
 		_spawn_player_damage_number(amount, hit_pos)
 
+func _setup_white_flash() -> void:
+	_flash_material = ShaderMaterial.new()
+	_flash_material.shader = WHITE_FLASH_SHADER
+	animated_sprite.material = _flash_material
+
 func _play_flash_effect() -> void:
-	if not animated_sprite:
+	if not _flash_material:
 		return
-	if _flash_tween and _flash_tween.is_valid():
-		_flash_tween.kill()
-	_flash_tween = create_tween()
-	animated_sprite.modulate = flash_color
-	_flash_tween.tween_property(animated_sprite, "modulate", Color.WHITE, flash_duration)
+	_flash_effect_id += 1
+	_animate_flash_effect(_flash_effect_id)
+
+func _animate_flash_effect(effect_id: int) -> void:
+	var elapsed := 0.0
+	while elapsed < flash_duration and effect_id == _flash_effect_id:
+		_flash_material.set_shader_parameter("flash_amount", 1.0)
+		var interval := minf(HIT_FLASH_INTERVAL, flash_duration - elapsed)
+		await get_tree().create_timer(interval, true, false, true).timeout
+		elapsed += interval
+		if elapsed >= flash_duration or effect_id != _flash_effect_id:
+			break
+
+		_flash_material.set_shader_parameter("flash_amount", 0.0)
+		interval = minf(HIT_FLASH_INTERVAL, flash_duration - elapsed)
+		await get_tree().create_timer(interval, true, false, true).timeout
+		elapsed += interval
+
+	if effect_id == _flash_effect_id and _flash_material:
+		_flash_material.set_shader_parameter("flash_amount", 0.0)
+
+func _start_hit_stop() -> void:
+	if not _hit_stop_active:
+		_hit_stop_previous_scale = Engine.time_scale
+		_hit_stop_active = true
+
+	_hit_stop_id += 1
+	Engine.time_scale = 0.0
+	_finish_hit_stop_after_delay(_hit_stop_id)
+
+func _finish_hit_stop_after_delay(hit_stop_id: int) -> void:
+	await get_tree().create_timer(HIT_STOP_DURATION, true, false, true).timeout
+	if hit_stop_id != _hit_stop_id:
+		return
+
+	Engine.time_scale = _hit_stop_previous_scale
+	_hit_stop_active = false
+
+func play_squash(scale_x: float, scale_y: float) -> void:
+	if not body:
+		return
+	if _squash_tween and _squash_tween.is_valid():
+		_squash_tween.kill()
+
+	var facing := -1.0 if body.scale.x < 0.0 else 1.0
+	_squash_tween = create_tween()
+	_squash_tween.tween_property(
+		body,
+		"scale",
+		Vector2(facing * scale_x, scale_y),
+		squash_duration
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_squash_tween.tween_property(
+		body,
+		"scale",
+		Vector2(facing, 1.0),
+		squash_recovery_duration
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _spawn_player_damage_number(amount: int, hit_pos: Vector2) -> void:
 	if not DAMAGE_NUMBER_SCENE:
 		return
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
 	var dmg_num = DAMAGE_NUMBER_SCENE.instantiate()
-	get_tree().current_scene.add_child(dmg_num)
+	scene.add_child(dmg_num)
 	var spawn_pos: Vector2
 	if hit_pos != Vector2.ZERO:
 		spawn_pos = hit_pos + Vector2(randf_range(-15.0, 15.0), -50.0)
@@ -148,6 +241,7 @@ func _physics_process(delta: float) -> void:
 
 	var is_attacking: bool = state_machine and state_machine.current_state is AttackState
 	var is_rolling: bool = state_machine and state_machine.current_state is RollState
+	var is_landing_rolling: bool = state_machine and state_machine.current_state is LandingRollState
 	var is_landing: bool = (
 		state_machine
 		and state_machine.current_state is JumpState
@@ -159,23 +253,25 @@ func _physics_process(delta: float) -> void:
 		coyote_timer = coyote_time
 		remaining_air_jumps = air_jumps
 	else:
-		velocity.y += gravity * delta
+		velocity.y = minf(velocity.y + gravity * delta, max_fall_speed)
 		coyote_timer -= delta
 
 	# Буфер прыжка (блокируется во время атаки / кувырка / приземления)
-	if not is_attacking and not is_rolling and not is_landing and Input.is_action_just_pressed("ui_up"):
+	if not is_attacking and not is_rolling and not is_landing_rolling and not is_landing and Input.is_action_just_pressed("ui_up"):
 		jump_buffer_timer = jump_buffer_time
 	else:
 		jump_buffer_timer -= delta
 
-	var jump_locked := is_rolling or is_landing
+	var jump_locked := is_rolling or is_landing_rolling or is_landing
 	if jump_buffer_timer > 0 and not jump_locked:
 		if coyote_timer > 0:
 			velocity.y = jump_velocity
+			play_squash(jump_stretch_x, jump_stretch_y)
 			jump_buffer_timer = 0.0
 			coyote_timer = 0.0
 		elif DoubleJumpAvailable and remaining_air_jumps > 0:
 			velocity.y = jump_velocity * air_jump_strength
+			play_squash(jump_stretch_x, jump_stretch_y)
 			jump_buffer_timer = 0.0
 			remaining_air_jumps -= 1
 
@@ -186,6 +282,9 @@ func _physics_process(delta: float) -> void:
 	if is_rolling:
 		var roll := state_machine.current_state as RollState
 		velocity.x = roll.roll_direction * roll.current_roll_speed
+	elif is_landing_rolling:
+		var landing_roll := state_machine.current_state as LandingRollState
+		velocity.x = landing_roll.roll_speed
 	elif is_landing:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 	else:
@@ -193,7 +292,7 @@ func _physics_process(delta: float) -> void:
 		if direction != 0:
 			var target_speed = speed * attack_move_speed_multiplier if is_attacking else speed
 			velocity.x = move_toward(velocity.x, direction * target_speed, acceleration * delta)
-			body.scale.x = -1 if direction < 0 else 1
+			body.scale.x = absf(body.scale.x) * (-1.0 if direction < 0 else 1.0)
 		else:
 			velocity.x = move_toward(velocity.x, 0, friction * delta)
 

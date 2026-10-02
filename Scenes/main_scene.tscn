@@ -9,7 +9,6 @@
 [ext_resource type="Script" uid="uid://wsj0ptv2gkfi" path="res://Scripts/hp_main_bar.gd" id="6_m1efj"]
 
 [node name="MainNode" type="Node2D" unique_id=1534675655]
-position = Vector2(64.355, 0)
 
 [node name="Player" parent="." unique_id=1660670300 instance=ExtResource("3_iacmt")]
 position = Vector2(-25, 280)

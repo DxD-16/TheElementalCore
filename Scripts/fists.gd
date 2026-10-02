@@ -59,26 +59,47 @@ func _process(delta: float) -> void:
 		if combo_timer <= 0:
 			reset_combo()
 
+func get_combo_index() -> int:
+	if damage_list.is_empty():
+		return 0
+	return clampi(current_combo, 0, damage_list.size() - 1)
+
+func get_attack_data() -> Dictionary:
+	var idx := get_combo_index()
+	var damage: int = 0
+	var knockback: float = 0.0
+	var time: float = 0.1
+
+	if not damage_list.is_empty() and idx < damage_list.size():
+		damage = damage_list[idx]
+	if not knockback_list.is_empty() and idx < knockback_list.size():
+		knockback = knockback_list[idx]
+	if not attack_time_list.is_empty() and idx < attack_time_list.size():
+		time = attack_time_list[idx]
+
+	return {"damage": damage, "knockback": knockback, "time": time}
+
 func execute_attack() -> void:
 	if is_attacking:
 		return
 	is_attacking = true
 	combo_timer = 0.0
 	hit_enemies_this_swing.clear()
-	
-	var safe_combo: int = clampi(current_combo, 0, damage_list.size() - 1)
-	
+
+	var safe_combo: int = get_combo_index()
+
 	# Включаем нужный хитбокс под текущий удар
 	disable_all_hitboxes()
 	if safe_combo < shapes.size() and shapes[safe_combo] is CollisionShape2D:
 		shapes[safe_combo].disabled = false
-	
+
 	attack_step_started.emit(safe_combo)
-	
+
 	# Длительность одного удара
 	var spd: float = attack_speed if attack_speed > 0.001 else 1.0
-	await get_tree().create_timer(attack_time_list[safe_combo] / spd).timeout
-	
+	var data := get_attack_data()
+	await get_tree().create_timer(data["time"] / spd).timeout
+
 	finish_attack_step()
 
 func finish_attack_step() -> void:
@@ -117,16 +138,18 @@ func _on_attack_area_body_entered(body: Node2D) -> void:
 	if body in hit_enemies_this_swing:
 		return
 	hit_enemies_this_swing.append(body)
-	
+
 	if body.has_method("take_damage"):
-		var index: int = clampi(current_combo, 0, damage_list.size() - 1)
-		var damage: int = damage_list[index]
-		
+		var index: int = get_combo_index()
+		var damage: int = 0
+		if not damage_list.is_empty() and index < damage_list.size():
+			damage = damage_list[index]
+
 		# Точные мировые координаты активного хитбокса кулака
 		var hit_pos: Vector2 = hit_box.global_position
 		if index < shapes.size() and shapes[index] is Node2D:
 			hit_pos = (shapes[index] as Node2D).global_position
-		
+
 		body.take_damage(damage, hit_pos)
 
 func _on_hit_box_body_entered(body: Node2D) -> void:

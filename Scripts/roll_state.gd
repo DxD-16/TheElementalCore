@@ -14,7 +14,6 @@ var current_roll_speed: float = 0.0
 var cooldown_timer: float = 0.0
 var roll_elapsed_time: float = 0.0
 var roll_duration: float = 0.66
-var is_landing_roll: bool = false
 
 var roll_speed_multiplier: float:
 	get:
@@ -41,10 +40,8 @@ func enter() -> void:
 	if not player:
 		return
 
-	# Запуск перезарядки (4 секунды) для активного рывка
-	if not is_landing_roll:
-		cooldown_timer = cooldown_duration
-	is_landing_roll = false
+	# Перезарядка применяется только к ручному кувырку
+	cooldown_timer = cooldown_duration
 
 	# Неуязвимость персонажа во время рывка
 	player.is_invulnerable = true

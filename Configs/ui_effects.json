@@ -1,16 +1,16 @@
 {
   "damage_number": {
-    "rise_distance": 35.0,
-    "rise_duration": 0.2,
-    "hold_duration": 1.0,
-    "fade_duration": 0.25,
-    "drift_range_x": 25.0,
-    "spawn_offset_x_range": 35.0,
-    "spawn_offset_y_range": 20.0,
-    "base_offset_y": -70.0
+	"rise_distance": 35.0,
+	"rise_duration": 0.2,
+	"hold_duration": 1.0,
+	"fade_duration": 0.25,
+	"drift_range_x": 25.0,
+	"spawn_offset_x_range": 35.0,
+	"spawn_offset_y_range": 20.0,
+	"base_offset_y": -70.0
   },
   "health_bar": {
-    "delay_interval": 0.4,
-    "fade_duration": 0.5
+	"delay_interval": 0.4,
+	"fade_duration": 0.5
   }
 }

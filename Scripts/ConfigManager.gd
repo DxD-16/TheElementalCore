@@ -92,14 +92,18 @@ func get_value(file_id: String, path: String = "", default_value: Variant = null
 func get_float(file_id: String, path: String, default_value: float = 0.0) -> float:
 	var val = get_value(file_id, path, default_value)
 	if val != null and (val is float or val is int):
-		return float(val)
+		var number := float(val)
+		if is_finite(number):
+			return number
 	return default_value
 
 ## Типизированное получение int
 func get_int(file_id: String, path: String, default_value: int = 0) -> int:
 	var val = get_value(file_id, path, default_value)
 	if val != null and (val is int or val is float):
-		return int(val)
+		var number := float(val)
+		if is_finite(number):
+			return int(number)
 	return default_value
 
 ## Типизированное получение bool

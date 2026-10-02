@@ -102,9 +102,12 @@ func flash_effect() -> void:
 
 func spawn_damage_number(amount: int, base_pos: Vector2) -> void:
 	if DAMAGE_NUMBER_SCENE:
+		var scene := get_tree().current_scene
+		if scene == null:
+			return
 		var dmg_num = DAMAGE_NUMBER_SCENE.instantiate()
 		# Добавляем в сцену мира, чтобы цифра была неподвижна и не преследовала игрока
-		get_tree().current_scene.add_child(dmg_num)
+		scene.add_child(dmg_num)
 
 		# Разброс по X и Y над хитбоксом атаки, чтобы цифры не слипались
 		var offset_x = randf_range(-spawn_offset_x, spawn_offset_x)

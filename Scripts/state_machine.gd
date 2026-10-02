@@ -34,9 +34,12 @@ func transition_to(target_state_name: String) -> void:
 	var target_state = states.get(target_state_name.to_lower())
 	if not target_state:
 		return
-	
+
+	if current_state == target_state:
+		return
+
 	if current_state:
 		current_state.exit()
-	
+
 	current_state = target_state
 	current_state.enter()
