@@ -3,6 +3,13 @@ class_name Dummy
 extends StaticBody2D
 
 const DAMAGE_NUMBER_SCENE = preload("res://Scenes/ui/damage_number.tscn")
+const DROPPED_ITEM_SCENE = preload("res://Scenes/dropped_item.tscn")
+
+## Таблица дропа: [{item_id, min_count, max_count, chance}]
+var drop_table: Array[Dictionary] = [
+	{"item_id": "health_potion", "min_count": 1, "max_count": 2, "chance": 0.8},
+	{"item_id": "big_health_potion", "min_count": 1, "max_count": 1, "chance": 0.25}
+]
 
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var sprite: Sprite2D = $Sprite2D
@@ -116,8 +123,31 @@ func spawn_damage_number(amount: int, base_pos: Vector2) -> void:
 
 		dmg_num.start(amount, spawn_pos)
 	else:
-		print("ОШИБКА: Сцена DamageNumber не найдена!")
+		print("ERROR: DamageNumber scene not found!")
 
 func _on_died() -> void:
-	print("Манекен уничтожен!")
+	print("Dummy destroyed!")
+	_spawn_loot()
 	queue_free()
+
+func _spawn_loot() -> void:
+	if not DROPPED_ITEM_SCENE:
+		return
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	for entry in drop_table:
+		var chance: float = entry.get("chance", 1.0)
+		if randf() > chance:
+			continue
+		var item_id: String = entry.get("item_id", "")
+		if item_id.is_empty():
+			continue
+		var min_c: int = int(entry.get("min_count", 1))
+		var max_c: int = int(entry.get("max_count", 1))
+		var count: int = randi_range(min_c, max_c)
+		var dropped = DROPPED_ITEM_SCENE.instantiate() as DroppedItem
+		scene.add_child(dropped)
+		dropped.global_position = global_position + Vector2(0, -10)
+		var launch := Vector2(randf_range(-120.0, 120.0), randf_range(-250.0, -150.0))
+		dropped.setup(item_id, count, launch)

@@ -7,6 +7,8 @@
 [ext_resource type="Texture2D" uid="uid://cubsxsfpa58jv" path="res://Sprites/UiElements/PlayerHealthBar/HpBar.png" id="5_huasi"]
 [ext_resource type="Texture2D" uid="uid://xiusftu8stui" path="res://Sprites/UiElements/PlayerHealthBar/HpDelayBar.png" id="5_maf8m"]
 [ext_resource type="Script" uid="uid://wsj0ptv2gkfi" path="res://Scripts/hp_main_bar.gd" id="6_m1efj"]
+[ext_resource type="PackedScene" path="res://Scenes/chest.tscn" id="7_chest"]
+[ext_resource type="PackedScene" path="res://Scenes/ui/inventory_ui.tscn" id="8_inv_ui"]
 
 [node name="MainNode" type="Node2D" unique_id=1534675655]
 
@@ -53,3 +55,8 @@ texture_progress_offset = Vector2(35, 12)
 script = ExtResource("6_m1efj")
 delay_bar = NodePath("../HPDelayBar")
 frame_node = NodePath("../HPFrame")
+
+[node name="InventoryUI" parent="CanvasLayer" unique_id=983742111 instance=ExtResource("8_inv_ui")]
+
+[node name="Chest" parent="." unique_id=748291034 instance=ExtResource("7_chest")]
+position = Vector2(250, 290)

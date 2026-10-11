@@ -8,10 +8,11 @@
 [ext_resource type="Script" uid="uid://cm7qo574bp66k" path="res://Scripts/attack_state.gd" id="5_3smsa"]
 [ext_resource type="Script" uid="uid://cbatnbqr2jicy" path="res://Scripts/jump_state.gd" id="6_jump"]
 [ext_resource type="Script" uid="uid://q7bpdj2e2cr7" path="res://Scripts/roll_state.gd" id="7_roll"]
-[ext_resource type="Script" path="res://Scripts/landing_roll_state.gd" id="landing_roll_state"]
 [ext_resource type="Script" uid="uid://b7er2nfjarfdt" path="res://Scripts/fists.gd" id="10_fs7ks"]
 [ext_resource type="Script" uid="uid://dnhkarykqlvae" path="res://Scripts/HealthComponent.gd" id="11_hpcomp"]
 [ext_resource type="Script" uid="uid://wcapomms6fnd" path="res://Scripts/death_state.gd" id="death_state_script"]
+[ext_resource type="Script" uid="uid://b7yxvpuraf1b2" path="res://Scripts/landing_roll_state.gd" id="landing_roll_state"]
+[ext_resource type="Script" path="res://Scripts/inventory_data.gd" id="inv_data"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_g4v7s"]
 radius = 4.7222214
@@ -773,6 +774,7 @@ animations = [{
 }]
 
 [node name="Player" type="CharacterBody2D" unique_id=1660670300]
+z_index = 2
 scale = Vector2(3, 3)
 script = ExtResource("1_tx1dd")
 DoubleJumpAvailable = true
@@ -801,7 +803,6 @@ script = ExtResource("3_x3wgy")
 
 [node name="JumpState" type="Node" parent="StateMachine" unique_id=122086694]
 script = ExtResource("6_jump")
-vertical_land_threshold = 250.0
 
 [node name="DeathState" type="Node" parent="StateMachine" unique_id=1672964482]
 script = ExtResource("death_state_script")
@@ -809,7 +810,7 @@ script = ExtResource("death_state_script")
 [node name="RollState" type="Node" parent="StateMachine" unique_id=909058797]
 script = ExtResource("7_roll")
 
-[node name="LandingRollState" type="Node" parent="StateMachine"]
+[node name="LandingRollState" type="Node" parent="StateMachine" unique_id=311615244]
 script = ExtResource("landing_roll_state")
 
 [node name="AttackState" type="Node" parent="StateMachine" unique_id=1592831571]
@@ -857,6 +858,11 @@ disabled = true
 position = Vector2(6.9999995, -6.9999995)
 scale = Vector2(0.49999997, 0.49999997)
 sprite_frames = SubResource("SpriteFrames_g4v7s")
-animation = &"PlayerFalling"
+animation = &"PlayerAttack_3"
+frame = 6
+frame_progress = 1.0
+
+[node name="InventoryData" type="Node" parent="."]
+script = ExtResource("inv_data")
 
 [connection signal="body_entered" from="Body/WeaponManager/Fists/AttackArea" to="Body/WeaponManager/Fists" method="_on_attack_area_body_entered"]

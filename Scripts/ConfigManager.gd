@@ -48,23 +48,23 @@ func load_all_configs() -> void:
 			file_name = dir.get_next()
 		dir.list_dir_end()
 
-	print("[ConfigManager] Успешно загружено конфигов: %d (%s)" % [configs.size(), ", ".join(configs.keys())])
+	print("[ConfigManager] Successfully loaded configs: %d (%s)" % [configs.size(), ", ".join(configs.keys())])
 
 ## Чтение и парсинг отдельного JSON файла
 func _load_json_file(file_path: String) -> Variant:
 	if not FileAccess.file_exists(file_path):
-		push_warning("[ConfigManager] Файл не существует: %s" % file_path)
+		push_warning("[ConfigManager] File does not exist: %s" % file_path)
 		return null
 
 	var file := FileAccess.open(file_path, FileAccess.READ)
 	if not file:
-		push_error("[ConfigManager] Не удалось открыть файл: %s" % file_path)
+		push_error("[ConfigManager] Failed to open file: %s" % file_path)
 		return null
 
 	var content := file.get_as_text()
 	var parsed: Variant = JSON.parse_string(content)
 	if parsed == null:
-		push_error("[ConfigManager] Ошибка синтаксиса JSON в файле: %s" % file_path)
+		push_error("[ConfigManager] JSON syntax error in file: %s" % file_path)
 	return parsed
 
 ## Перезагрузка всех конфигураций на лету

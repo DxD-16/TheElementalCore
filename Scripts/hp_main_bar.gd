@@ -46,7 +46,7 @@ func _ready() -> void:
 
 		health_component.health_changed.connect(_on_health_changed)
 	else:
-		push_warning("PlayerHealthBar не смог найти HealthComponent у игрока!")
+		push_warning("PlayerHealthBar could not find HealthComponent on player!")
 
 func _load_ui_config() -> void:
 	if ConfigManager:

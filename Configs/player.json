@@ -16,7 +16,7 @@
 	"roll": {
 	  "initial_speed_multiplier": 2.4,
 	  "final_speed_multiplier": 1.0,
-	  "cooldown_duration": 4.0
+	  "cooldown_duration": 1.0
 	},
 	"jump": {
 	  "fall_anim_delay": 0.25,

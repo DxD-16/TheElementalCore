@@ -7,7 +7,7 @@ extends State
 ## Множитель конечной скорости рывка (к концу анимации)
 @export var final_speed_multiplier: float = 1.0
 ## Перезарядка рывка в секундах
-@export var cooldown_duration: float = 4.0
+@export var cooldown_duration: float = 1.0
 
 var roll_direction: float = 1.0
 var current_roll_speed: float = 0.0

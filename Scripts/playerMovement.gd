@@ -45,6 +45,7 @@ var _hit_stop_active: bool = false
 var _hit_stop_previous_scale: float = 1.0
 var _squash_tween: Tween
 var is_dead: bool = false
+var controls_locked: bool = false
 
 var jump_stretch_x: float = 0.94
 var jump_stretch_y: float = 1.08
@@ -64,8 +65,12 @@ const PLAYER_DAMAGE_COLOR := Color(0.871, 0.620, 0.255)
 @onready var animated_sprite: AnimatedSprite2D = $Body/AnimatedSprite2D
 @onready var state_machine: StateMachine = $StateMachine
 
+@export var inventory_data: InventoryData
+
 func _ready() -> void:
 	add_to_group("Player")
+	if inventory_data == null:
+		inventory_data = get_node_or_null("InventoryData") as InventoryData
 	_load_config()
 	_setup_dash_input()
 	_setup_white_flash()
@@ -239,6 +244,13 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
+	if controls_locked:
+		velocity.x = 0.0
+		if not is_on_floor():
+			velocity.y = minf(velocity.y + gravity * delta, max_fall_speed)
+		move_and_slide()
+		return
+
 	var is_attacking: bool = state_machine and state_machine.current_state is AttackState
 	var is_rolling: bool = state_machine and state_machine.current_state is RollState
 	var is_landing_rolling: bool = state_machine and state_machine.current_state is LandingRollState
@@ -297,3 +309,13 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0, friction * delta)
 
 	move_and_slide()
+
+func set_controls_locked(locked: bool) -> void:
+	if controls_locked == locked:
+		return
+
+	controls_locked = locked
+	jump_buffer_timer = 0.0
+	velocity.x = 0.0
+	if state_machine and not is_dead:
+		state_machine.transition_to("IdleState" if is_on_floor() else "JumpState")

@@ -1,0 +1,24 @@
+{
+  "health_potion": {
+	"name": "Health Potion",
+	"description": "Restores 50 HP",
+	"type": "consumable",
+	"stackable": true,
+	"max_stack": 10,
+	"icon": "res://Sprites/Bottle_test.png",
+	"use_effect": {
+	  "heal": 50
+	}
+  },
+  "big_health_potion": {
+	"name": "Greater Health Potion",
+	"description": "Restores 100 HP",
+	"type": "consumable",
+	"stackable": true,
+	"max_stack": 5,
+	"icon": "res://Sprites/Bottle_test.png",
+	"use_effect": {
+	  "heal": 100
+	}
+  }
+}

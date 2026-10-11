@@ -23,12 +23,15 @@ func _init_state() -> void:
 	transition_to(initial_state.name)
 
 func _process(delta: float) -> void:
-	if current_state:
+	if current_state and not _are_controls_locked():
 		current_state.update(delta)
 
 func _physics_process(delta: float) -> void:
-	if current_state:
+	if current_state and not _are_controls_locked():
 		current_state.physics_update(delta)
+
+func _are_controls_locked() -> bool:
+	return current_state != null and current_state.player != null and current_state.player.controls_locked
 
 func transition_to(target_state_name: String) -> void:
 	var target_state = states.get(target_state_name.to_lower())
