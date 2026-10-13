@@ -196,9 +196,8 @@ func _on_attack_area_body_entered(target: Node2D) -> void:
 
 	var step := get_current_attack()
 	var index := runtime.combo_index
-	var hit_position := attack_area.global_position
-	if index < hit_shapes.size():
-		hit_position = hit_shapes[index].global_position
+	var hit_shape: CollisionShape2D = hit_shapes[index] if index < hit_shapes.size() else null
+	var hit_position := _get_hit_position(target, hit_shape)
 
 	var knockback_strength := float(step.get("knockback", 0.0))
 	var knockback_direction := Vector2.ZERO
@@ -219,3 +218,28 @@ func _on_attack_area_body_entered(target: Node2D) -> void:
 	target.take_damage(maxi(int(step.get("damage", 0)), 0), hit_position, knockback_direction)
 	if knockback_strength > 0.0 and source != null and source.has_method("apply_attack_recoil"):
 		source.apply_attack_recoil(source_direction, knockback_strength)
+
+func _get_hit_position(target: Node2D, hit_shape: CollisionShape2D) -> Vector2:
+	if hit_shape == null or hit_shape.shape == null:
+		return target.global_position
+
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = hit_shape.shape
+	query.transform = hit_shape.global_transform
+	query.collision_mask = attack_area.collision_mask
+	if source is CollisionObject2D:
+		query.exclude = [source.get_rid()]
+
+	var contact_points := attack_area.get_world_2d().direct_space_state.collide_shape(query, 32)
+	if contact_points.size() < 2:
+		return target.global_position
+
+	var best_position := target.global_position
+	var best_distance := INF
+	for i in range(0, contact_points.size() - 1, 2):
+		var contact_position: Vector2 = (contact_points[i] + contact_points[i + 1]) * 0.5
+		var distance := contact_position.distance_squared_to(target.global_position)
+		if distance < best_distance:
+			best_distance = distance
+			best_position = contact_position
+	return best_position

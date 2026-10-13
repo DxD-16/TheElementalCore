@@ -34,9 +34,7 @@
   },
   "health": {
 	"max_health": 200,
-	"iframes_after_dmg": 0.4,
-	"flash_color": "#ffffff",
-	"flash_duration": 0.15
+	"iframes_after_dmg": 0.4
   },
   "camera": {
 	"follow_speed": 5.0

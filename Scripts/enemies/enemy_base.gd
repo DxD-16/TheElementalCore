@@ -9,6 +9,7 @@ const EnemyDamageResolverClass = preload("res://Scripts/enemies/enemy_damage_res
 
 var definition = null
 var move_speed: float = 60.0
+var horizontal_friction: float = 900.0
 var target: Node2D = null
 var status_effect_manager: StatusEffectManager = StatusEffectManager.new()
 var attack_definitions: Array = []
@@ -17,16 +18,14 @@ var current_attack = null
 var attack_cooldown: float = 0.0
 var is_dead: bool = false
 var health_component: HealthComponent = null
-var sprite: Sprite2D = null
 var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 func _ready() -> void:
 	if definition == null:
 		definition = EnemyDefinitionClass.new("enemy")
+	horizontal_friction = float(definition.horizontal_friction)
 	if health_component == null:
 		health_component = _ensure_health_component()
-	if sprite == null and has_node("Sprite2D"):
-		sprite = get_node("Sprite2D") as Sprite2D
 	if health_component:
 		health_component.max_health = int(definition.max_health)
 		health_component.current_health = int(definition.max_health)
@@ -68,6 +67,7 @@ func set_definition(p_definition) -> void:
 	if definition == null:
 		definition = EnemyDefinitionClass.new("enemy")
 	move_speed = float(definition.move_speed)
+	horizontal_friction = float(definition.horizontal_friction)
 	if health_component:
 		health_component.max_health = int(definition.max_health)
 		health_component.current_health = int(definition.max_health)
@@ -90,14 +90,13 @@ func _process(delta: float) -> void:
 		attack_cooldown = maxf(0.0, attack_cooldown - delta)
 	if state_machine != null:
 		state_machine.update(delta)
-	velocity.x = move_toward(velocity.x, 0.0, 120.0 * delta)
-	velocity.y = move_toward(velocity.y, 0.0, 120.0 * delta)
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += gravity * delta
 	if state_machine != null:
 		state_machine.physics_update(delta)
+	velocity.x = move_toward(velocity.x, 0.0, horizontal_friction * delta)
 	move_and_slide()
 
 func apply_knockback(force: Vector2) -> void:
@@ -112,32 +111,12 @@ func apply_damage(amount: int, hit_position: Vector2 = Vector2.ZERO, element: in
 		health_component.take_damage(final_damage)
 	if knockback.length() > 0.0:
 		apply_knockback(knockback)
-	flash_effect()
-	spawn_damage_number(final_damage, hit_position if hit_position != Vector2.ZERO else global_position)
+	CombatPresentation.show_hit(self, final_damage, hit_position if hit_position != Vector2.ZERO else global_position)
 	if health_component and health_component.current_health <= 0:
 		_on_died()
 
 func take_damage(amount: int, hit_pos: Vector2 = Vector2.ZERO, knockback: Vector2 = Vector2.ZERO) -> void:
 	apply_damage(amount, hit_pos, ElementalTypes.ElementType.NONE, null, knockback)
-
-func flash_effect() -> void:
-	if sprite == null:
-		return
-	if sprite.modulate != Color.WHITE:
-		sprite.modulate = Color.RED
-	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color.WHITE, 0.15)
-
-func spawn_damage_number(amount: int, base_pos: Vector2) -> void:
-	var damage_scene = load("res://Scenes/ui/damage_number.tscn")
-	if damage_scene == null:
-		return
-	var scene = get_tree().current_scene
-	if scene == null:
-		return
-	var text = damage_scene.instantiate()
-	scene.add_child(text)
-	text.start(amount, base_pos)
 
 func _on_died() -> void:
 	if is_dead:
@@ -166,7 +145,7 @@ func _spawn_loot() -> void:
 		var min_count: int = int(entry.get("min_count", 1))
 		var max_count: int = int(entry.get("max_count", 1))
 		var count: int = randi_range(min_count, max_count)
-		var dropped = load("res://Scenes/dropped_item.tscn").instantiate() as DroppedItem
+		var dropped = load("res://Scenes/items/dropped_item.tscn").instantiate() as DroppedItem
 		scene.add_child(dropped)
 		dropped.global_position = global_position + Vector2(0, -10)
 		var launch := Vector2(randf_range(-120.0, 120.0), randf_range(-250.0, -150.0))

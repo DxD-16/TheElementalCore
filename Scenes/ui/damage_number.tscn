@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://l0t2fvxh4gse"]
 
-[ext_resource type="Script" uid="uid://dffug5wwvjurw" path="res://Scripts/damage_number.gd" id="1_m808r"]
-[ext_resource type="FontFile" uid="uid://dnl8hqx2fv4sq" path="res://OtherRecources/Jersey15-Regular.ttf" id="2_gasoy"]
+[ext_resource type="Script" uid="uid://dffug5wwvjurw" path="res://Scripts/ui/damage_number.gd" id="1_m808r"]
+[ext_resource type="FontFile" uid="uid://dnl8hqx2fv4sq" path="res://Fonts/jersey15-regular.ttf" id="2_gasoy"]
 
 [node name="DamageNumber" type="Node2D" unique_id=141638542]
 z_index = 10

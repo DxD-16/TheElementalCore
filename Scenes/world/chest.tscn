@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://b5s75ppubvbem"]
+
+[ext_resource type="Script" uid="uid://cqk526hlxrj4x" path="res://Scripts/world/chest.gd" id="1_chest"]
+[ext_resource type="Texture2D" uid="uid://byo8p5kgeoscf" path="res://Sprites/world/chest_closed.png" id="2_pmguq"]
+[ext_resource type="FontFile" uid="uid://dnl8hqx2fv4sq" path="res://Fonts/jersey15-regular.ttf" id="3_font"]
+[ext_resource type="Script" uid="uid://brqrhqxyjad8r" path="res://Scripts/items/inventory_data.gd" id="4_inv_data"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(51, 43)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_interact"]
+radius = 50.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_hint"]
+font = ExtResource("3_font")
+font_size = 14
+font_color = Color(1, 1, 0.8, 1)
+outline_size = 2
+outline_color = Color(0, 0, 0, 0.8)
+
+[node name="Chest" type="StaticBody2D" unique_id=772056432]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_chest")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=312211772]
+modulate = Color(0.9, 0.75, 0.4, 1)
+texture = ExtResource("2_pmguq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=413468816]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="InteractionArea" type="Area2D" parent="." unique_id=1064831139]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=221613278]
+shape = SubResource("CircleShape2D_interact")
+
+[node name="HintLabel" type="Label" parent="." unique_id=812700517]
+visible = false
+offset_left = -30.0
+offset_top = -45.0
+offset_right = 30.0
+offset_bottom = -30.0
+text = "[E] Open"
+label_settings = SubResource("LabelSettings_hint")
+horizontal_alignment = 1
+
+[node name="InventoryData" type="Node" parent="." unique_id=189219634]
+script = ExtResource("4_inv_data")
+slot_count = 15

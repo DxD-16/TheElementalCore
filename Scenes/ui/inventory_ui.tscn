@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://pha58j6772cd"]
 
-[ext_resource type="Script" uid="uid://bbhq2xpvo4r7h" path="res://Scripts/inventory_ui.gd" id="1_inv_ui"]
-[ext_resource type="FontFile" uid="uid://dnl8hqx2fv4sq" path="res://OtherRecources/Jersey15-Regular.ttf" id="2_font"]
+[ext_resource type="Script" uid="uid://bbhq2xpvo4r7h" path="res://Scripts/ui/inventory_ui.gd" id="1_inv_ui"]
+[ext_resource type="FontFile" uid="uid://dnl8hqx2fv4sq" path="res://Fonts/jersey15-regular.ttf" id="2_font"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.08, 0.09, 0.14, 0.94)

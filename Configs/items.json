@@ -5,7 +5,7 @@
 	"type": "consumable",
 	"stackable": true,
 	"max_stack": 10,
-	"icon": "res://Sprites/Bottle_test.png",
+	"icon": "res://Sprites/items/bottle_test.png",
 	"use_effect": {
 	  "heal": 50
 	}
@@ -16,7 +16,7 @@
 	"type": "consumable",
 	"stackable": true,
 	"max_stack": 5,
-	"icon": "res://Sprites/Bottle_test.png",
+	"icon": "res://Sprites/items/bottle_test.png",
 	"use_effect": {
 	  "heal": 100
 	}

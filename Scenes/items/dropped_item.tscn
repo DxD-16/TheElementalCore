@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://daagdxdvuqysl"]
+
+[ext_resource type="Script" uid="uid://dw1yj21g0nej7" path="res://Scripts/items/dropped_item.gd" id="1_drop"]
+[ext_resource type="Texture2D" uid="uid://digfkm22sd6qu" path="res://Sprites/items/bottle_test.png" id="2_icon"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pickup"]
+radius = 14.0
+
+[node name="DroppedItem" type="Area2D" unique_id=1592928210]
+collision_layer = 0
+script = ExtResource("1_drop")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=22313298]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_icon")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=588944333]
+scale = Vector2(2, 2)
+shape = SubResource("CircleShape2D_pickup")

@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://c5gqtu2t2tunv"]
 
-[ext_resource type="Texture2D" uid="uid://cxdi1ujvxb2tx" path="res://Sprites/UiElements/EntityHealthBar/HpBarFrame (2).png" id="1_7xtfk"]
-[ext_resource type="Script" uid="uid://b7luwqb6fc42m" path="res://Scripts/main_hp_bar.gd" id="1_78m4n"]
-[ext_resource type="Texture2D" uid="uid://dvnjcwv1pwcte" path="res://Sprites/UiElements/EntityHealthBar/HpDelayBar (2).png" id="2_yw5b7"]
-[ext_resource type="Texture2D" uid="uid://xc0y4rpjj7t" path="res://Sprites/UiElements/EntityHealthBar/HpProgressBar.png" id="3_0iqeo"]
+[ext_resource type="Texture2D" uid="uid://cxdi1ujvxb2tx" path="res://Sprites/ui/entity_health_bar/frame.png" id="1_7xtfk"]
+[ext_resource type="Script" uid="uid://b7luwqb6fc42m" path="res://Scripts/ui/main_hp_bar.gd" id="1_78m4n"]
+[ext_resource type="Texture2D" uid="uid://dvnjcwv1pwcte" path="res://Sprites/ui/entity_health_bar/delay.png" id="2_yw5b7"]
+[ext_resource type="Texture2D" uid="uid://xc0y4rpjj7t" path="res://Sprites/ui/entity_health_bar/progress.png" id="3_0iqeo"]
 
 [node name="HealthBar" type="Marker2D" unique_id=1168271397]
 

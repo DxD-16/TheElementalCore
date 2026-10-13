@@ -6,6 +6,7 @@ var display_name: String = "Enemy"
 var max_health: int = 100
 var move_speed: float = 60.0
 var weight: float = 1.0
+var horizontal_friction: float = 900.0
 var detection_range: float = 240.0
 var attack_range: float = 50.0
 var attack_cooldown: float = 1.0
@@ -40,6 +41,12 @@ func _apply_data(p_data: Dictionary) -> void:
 			weight = configured_weight
 		else:
 			push_warning("EnemyDefinition weight must be greater than zero; using %.2f" % weight)
+	if p_data.has("horizontal_friction"):
+		var configured_friction := float(p_data["horizontal_friction"])
+		if is_finite(configured_friction) and configured_friction >= 0.0:
+			horizontal_friction = configured_friction
+		else:
+			push_warning("EnemyDefinition horizontal_friction must be finite and non-negative; using %.1f" % horizontal_friction)
 	if p_data.has("detection_range"):
 		detection_range = float(p_data["detection_range"])
 	if p_data.has("attack_range"):

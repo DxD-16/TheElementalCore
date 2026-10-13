@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 [autoload]
 
 ConfigManager="*res://Scripts/ConfigManager.gd"
+CombatPresentation="*res://Scripts/combat/combat_presentation.gd"
 
 [display]
 
@@ -26,7 +27,7 @@ window/stretch/mode="viewport"
 
 [gui]
 
-theme/custom_font="res://OtherRecources/Jersey15-Regular.ttf"
+theme/custom_font="res://Fonts/jersey15-regular.ttf"
 
 [input]
 
