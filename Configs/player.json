@@ -12,6 +12,9 @@
 	"air_jump_strength": 1.0,
 	"attack_move_speed_multiplier": 0.85
   },
+  "combat": {
+	"weight": 1.0
+  },
   "states": {
 	"roll": {
 	  "initial_speed_multiplier": 2.4,

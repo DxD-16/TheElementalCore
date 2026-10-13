@@ -5,6 +5,7 @@ extends Node
 
 var current_state: State
 var states: Dictionary = {}
+var _is_transitioning: bool = false
 
 func _ready() -> void:
 	# Автоматически находим все дочерние состояния
@@ -34,6 +35,9 @@ func _are_controls_locked() -> bool:
 	return current_state != null and current_state.player != null and current_state.player.controls_locked
 
 func transition_to(target_state_name: String) -> void:
+	if _is_transitioning:
+		return
+
 	var target_state = states.get(target_state_name.to_lower())
 	if not target_state:
 		return
@@ -41,8 +45,10 @@ func transition_to(target_state_name: String) -> void:
 	if current_state == target_state:
 		return
 
+	_is_transitioning = true
 	if current_state:
 		current_state.exit()
 
 	current_state = target_state
 	current_state.enter()
+	_is_transitioning = false

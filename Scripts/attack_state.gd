@@ -1,103 +1,89 @@
 class_name AttackState
 extends State
 
-@export var attack_duration: float = 0.3
-
-func _ready() -> void:
-	_load_config()
-
-func _load_config() -> void:
-	if ConfigManager:
-		attack_duration = ConfigManager.get_float("player", "states.attack.attack_duration", attack_duration)
+var weapon_controller: WeaponController
 
 func enter() -> void:
-	if player:
-		var direction := Input.get_axis("ui_left", "ui_right")
-		if direction == 0:
-			player.velocity.x = 0.0
-
-	var fists = get_fists()
-	if fists and fists.has_method("execute_attack"):
-		if not fists.attack_finished.is_connected(_on_fists_attack_finished):
-			fists.attack_finished.connect(_on_fists_attack_finished)
-		if not fists.attack_step_started.is_connected(_on_attack_step_started):
-			fists.attack_step_started.connect(_on_attack_step_started)
-		fists.execute_attack()
-	else:
-		if player and player.animated_sprite:
-			play_combo_animation(0)
-		await get_tree().create_timer(attack_duration).timeout
-		_on_fists_attack_finished()
-
-func _on_attack_step_started(step: int) -> void:
-	if player and player.animated_sprite:
-		play_combo_animation(step)
-
-func play_combo_animation(step: int) -> void:
-	if not player or not player.animated_sprite:
+	if not player:
 		return
 
-	var anim_name := "PlayerAttack_" + str(step + 1)
+	var direction := Input.get_axis("ui_left", "ui_right")
+	if direction == 0:
+		player.velocity.x = 0.0
+
+	weapon_controller = player.get_weapon_controller()
+	if weapon_controller == null:
+		push_error("AttackState could not find the player's WeaponController")
+		call_deferred("_return_to_movement_state")
+		return
+
+	if not weapon_controller.attack_finished.is_connected(_on_attack_finished):
+		weapon_controller.attack_finished.connect(_on_attack_finished)
+	if not weapon_controller.attack_step_started.is_connected(_on_attack_step_started):
+		weapon_controller.attack_step_started.connect(_on_attack_step_started)
+
+	if not weapon_controller.start_attack():
+		call_deferred("_return_to_movement_state")
+
+func _on_attack_step_started(step: int) -> void:
+	if not player or not player.animated_sprite or weapon_controller == null:
+		return
+
 	var frames := player.animated_sprite.sprite_frames
-	if not frames or not frames.has_animation(anim_name):
+	var anim_name := "PlayerAttack_%d" % (step + 1)
+	if frames == null or not frames.has_animation(anim_name):
 		anim_name = "PlayerAttack_1"
-		if not frames or not frames.has_animation(anim_name):
+		if frames == null or not frames.has_animation(anim_name):
 			return
 
-	var anim_speed := calculate_attack_anim_speed(anim_name, step)
-	player.animated_sprite.play(anim_name, anim_speed)
+	var step_data := weapon_controller.get_current_attack()
+	if weapon_controller.weapon_data == null:
+		return
+	var attack_speed := weapon_controller.weapon_data.base_attack_speed
+	var target_duration := float(step_data.get("time", 0.4)) / attack_speed
+	var frame_count := frames.get_frame_count(anim_name)
+	var animation_fps := frames.get_animation_speed(anim_name)
+	var animation_speed := attack_speed
+	if frame_count > 0 and animation_fps > 0.0 and target_duration > 0.0:
+		animation_speed = (float(frame_count) / animation_fps) / target_duration
+	player.animated_sprite.play(anim_name, animation_speed)
 
-func calculate_attack_anim_speed(anim_name: String, step: int) -> float:
-	var fists = get_fists()
-	if not fists:
-		return 1.0
+func _on_attack_finished() -> void:
+	if not state_machine or state_machine.current_state != self:
+		return
 
-	var attack_spd: float = fists.attack_speed if ("attack_speed" in fists and fists.attack_speed > 0.001) else 1.0
+	if player and not player.is_on_floor():
+		state_machine.transition_to("JumpState")
+		return
 
-	# Синхронизируем длительность анимации с временем текущего шага атаки
-	if "attack_time_list" in fists and step >= 0 and step < fists.attack_time_list.size():
-		var target_time: float = fists.attack_time_list[step] / attack_spd
-		if target_time > 0.0 and player and player.animated_sprite and player.animated_sprite.sprite_frames:
-			var frames: SpriteFrames = player.animated_sprite.sprite_frames
-			var count := frames.get_frame_count(anim_name)
-			var base_fps := frames.get_animation_speed(anim_name)
-			if count > 0 and base_fps > 0.0:
-				var natural_duration := float(count) / base_fps
-				return natural_duration / target_time
+	if Input.get_axis("ui_left", "ui_right") != 0:
+		state_machine.transition_to("RunState")
+	else:
+		state_machine.transition_to("IdleState")
 
-	return attack_spd
-
-func _on_fists_attack_finished() -> void:
-	if state_machine and state_machine.current_state == self:
-		var direction := Input.get_axis("ui_left", "ui_right")
-		if direction != 0:
-			state_machine.transition_to("RunState")
-		else:
-			state_machine.transition_to("IdleState")
+func _return_to_movement_state() -> void:
+	if not state_machine or state_machine.current_state != self:
+		return
+	if player and not player.is_on_floor():
+		state_machine.transition_to("JumpState")
+	elif Input.get_axis("ui_left", "ui_right") != 0:
+		state_machine.transition_to("RunState")
+	else:
+		state_machine.transition_to("IdleState")
 
 func exit() -> void:
 	if player and player.animated_sprite:
 		player.animated_sprite.speed_scale = 1.0
-
-	var fists = get_fists()
-	if fists:
-		if fists.attack_finished.is_connected(_on_fists_attack_finished):
-			fists.attack_finished.disconnect(_on_fists_attack_finished)
-		if fists.attack_step_started.is_connected(_on_attack_step_started):
-			fists.attack_step_started.disconnect(_on_attack_step_started)
+	if weapon_controller:
+		weapon_controller.cancel_attack()
+		if weapon_controller.attack_finished.is_connected(_on_attack_finished):
+			weapon_controller.attack_finished.disconnect(_on_attack_finished)
+		if weapon_controller.attack_step_started.is_connected(_on_attack_step_started):
+			weapon_controller.attack_step_started.disconnect(_on_attack_step_started)
 
 func update(_delta: float) -> void:
-	# Буферизация следующего удара комбо во время текущего
-	if Input.is_action_just_pressed("Normal_Attack"):
-		var fists = get_fists()
-		if fists:
-			fists.next_attack_buffered = true
+	if Input.is_action_just_pressed("Normal_Attack") and weapon_controller:
+		weapon_controller.buffer_next_attack()
 
 func physics_update(_delta: float) -> void:
-	# Физика обрабатывается в playerMovement.gd
 	pass
-
-func get_fists() -> Node2D:
-	if not player:
-		return null
-	return player.get_node_or_null("Body/WeaponManager/Fists")

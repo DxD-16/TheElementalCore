@@ -10,6 +10,7 @@ func enter() -> void:
 
 	roll_speed = inherited_velocity_x
 	player.velocity.x = roll_speed
+	player.set_dash_hitbox_reduced(true)
 	player.is_invulnerable = true
 
 	if player.body:
@@ -22,6 +23,7 @@ func enter() -> void:
 
 func exit() -> void:
 	if player:
+		player.set_dash_hitbox_reduced(false)
 		player.is_invulnerable = false
 		if player.animated_sprite and player.animated_sprite.animation_finished.is_connected(_on_roll_finished):
 			player.animated_sprite.animation_finished.disconnect(_on_roll_finished)

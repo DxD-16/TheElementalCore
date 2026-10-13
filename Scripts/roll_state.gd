@@ -43,6 +43,8 @@ func enter() -> void:
 	# Перезарядка применяется только к ручному кувырку
 	cooldown_timer = cooldown_duration
 
+	player.set_dash_hitbox_reduced(true)
+
 	# Неуязвимость персонажа во время рывка
 	player.is_invulnerable = true
 
@@ -78,6 +80,7 @@ func enter() -> void:
 
 func exit() -> void:
 	if player:
+		player.set_dash_hitbox_reduced(false)
 		player.is_invulnerable = false
 		if player.animated_sprite:
 			if player.animated_sprite.animation_finished.is_connected(_on_roll_finished):

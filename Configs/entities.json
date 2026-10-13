@@ -1,6 +1,7 @@
 {
   "dummy": {
 	"max_health": 1000,
+	"weight": 1.0,
 	"flash_color": "#ff0000",
 	"flash_duration": 0.15,
 	"contact_damage": 30

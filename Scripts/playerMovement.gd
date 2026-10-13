@@ -8,6 +8,7 @@ extends CharacterBody2D
 @export_category("Feel & Tuning")
 @export var acceleration: float = 1000.0
 @export var friction: float = 2000.0
+@export var weight: float = 1.0
 
 @export_category("Jump Tweaks")
 @export var coyote_time: float = 0.15
@@ -46,6 +47,8 @@ var _hit_stop_previous_scale: float = 1.0
 var _squash_tween: Tween
 var is_dead: bool = false
 var controls_locked: bool = false
+var status_effect_manager: StatusEffectManager = StatusEffectManager.new()
+var weapon_controller: WeaponController
 
 var jump_stretch_x: float = 0.94
 var jump_stretch_y: float = 1.08
@@ -56,6 +59,7 @@ var squash_recovery_duration: float = 0.14
 
 const HIT_STOP_DURATION: float = 0.2
 const HIT_FLASH_INTERVAL: float = 0.04
+const ATTACK_RECOIL_RATIO: float = 0.1
 const WHITE_FLASH_SHADER = preload("res://Scripts/white_flash.gdshader")
 const DAMAGE_NUMBER_SCENE = preload("res://Scenes/ui/damage_number.tscn")
 ## Цвет цифр урона игрока — оранжевый #de9e41
@@ -64,13 +68,24 @@ const PLAYER_DAMAGE_COLOR := Color(0.871, 0.620, 0.255)
 @onready var body: Node2D = $Body
 @onready var animated_sprite: AnimatedSprite2D = $Body/AnimatedSprite2D
 @onready var state_machine: StateMachine = $StateMachine
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 @export var inventory_data: InventoryData
+
+var _dash_collision_shape: CapsuleShape2D
+var _standing_collision_height: float = 0.0
+var _standing_collision_position: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	add_to_group("Player")
 	if inventory_data == null:
 		inventory_data = get_node_or_null("InventoryData") as InventoryData
+	status_effect_manager = StatusEffectManager.new()
+	weapon_controller = WeaponController.new()
+	weapon_controller.source = self
+	weapon_controller.name = "WeaponController"
+	add_child(weapon_controller)
+	_cache_dash_collision_shape()
 	_load_config()
 	_setup_dash_input()
 	_setup_white_flash()
@@ -78,6 +93,29 @@ func _ready() -> void:
 	var health := get_node_or_null("HealthComponent") as HealthComponent
 	if health:
 		health.died.connect(_on_died)
+
+func _cache_dash_collision_shape() -> void:
+	if not collision_shape or not collision_shape.shape is CapsuleShape2D:
+		push_warning("Player collision shape must be a CapsuleShape2D to reduce it during a dash")
+		return
+
+	_dash_collision_shape = (collision_shape.shape as CapsuleShape2D).duplicate() as CapsuleShape2D
+	collision_shape.shape = _dash_collision_shape
+	_standing_collision_height = _dash_collision_shape.height
+	_standing_collision_position = collision_shape.position
+
+func set_dash_hitbox_reduced(reduced: bool) -> void:
+	if not _dash_collision_shape:
+		return
+
+	if reduced:
+		_dash_collision_shape.height = _standing_collision_height * 0.5
+		collision_shape.position = _standing_collision_position + Vector2(
+			0.0, (_standing_collision_height - _dash_collision_shape.height) * 0.5
+		)
+	else:
+		_dash_collision_shape.height = _standing_collision_height
+		collision_shape.position = _standing_collision_position
 
 func _exit_tree() -> void:
 	if _hit_stop_active:
@@ -97,6 +135,11 @@ func _load_config() -> void:
 		jump_velocity = ConfigManager.get_float("player", "movement.jump_velocity", jump_velocity)
 		acceleration = ConfigManager.get_float("player", "movement.acceleration", acceleration)
 		friction = ConfigManager.get_float("player", "movement.friction", friction)
+		var configured_weight := ConfigManager.get_float("player", "combat.weight", weight)
+		if configured_weight > 0.0:
+			weight = configured_weight
+		else:
+			push_warning("player.combat.weight must be greater than zero; using %.2f" % weight)
 		coyote_time = ConfigManager.get_float("player", "movement.coyote_time", coyote_time)
 		jump_buffer_time = ConfigManager.get_float("player", "movement.jump_buffer_time", jump_buffer_time)
 		jump_cut_multiplier = ConfigManager.get_float("player", "movement.jump_cut_multiplier", jump_cut_multiplier)
@@ -142,10 +185,12 @@ func _on_died() -> void:
 	if state_machine and not state_machine.current_state is DeathState:
 		state_machine.transition_to("DeathState")
 
-func take_damage(amount: int, hit_pos: Vector2 = Vector2.ZERO) -> void:
+func take_damage(amount: int, hit_pos: Vector2 = Vector2.ZERO, knockback: Vector2 = Vector2.ZERO) -> void:
 	# Неуязвимость во время рывка или i-frames после урона
 	if is_invulnerable or _iframe_timer > 0.0:
 		return
+	if knockback.length() > 0.0:
+		velocity += knockback
 	var health := get_node_or_null("HealthComponent") as HealthComponent
 	if health:
 		health.take_damage(amount)
@@ -157,6 +202,13 @@ func take_damage(amount: int, hit_pos: Vector2 = Vector2.ZERO) -> void:
 	if amount > 0:
 		_start_hit_stop()
 		_spawn_player_damage_number(amount, hit_pos)
+
+func apply_attack_recoil(attack_direction: float, knockback_strength: float) -> void:
+	if is_dead or not is_finite(attack_direction) or not is_finite(knockback_strength):
+		return
+	var safe_weight := weight if is_finite(weight) and weight > 0.0 else 1.0
+	var recoil_strength := maxf(knockback_strength, 0.0) * ATTACK_RECOIL_RATIO / safe_weight
+	velocity.x -= signf(attack_direction) * recoil_strength
 
 func _setup_white_flash() -> void:
 	_flash_material = ShaderMaterial.new()
@@ -319,3 +371,16 @@ func set_controls_locked(locked: bool) -> void:
 	velocity.x = 0.0
 	if state_machine and not is_dead:
 		state_machine.transition_to("IdleState" if is_on_floor() else "JumpState")
+
+func get_weapon_controller() -> WeaponController:
+	return weapon_controller
+
+func has_status(effect_id: String) -> bool:
+	return status_effect_manager != null and status_effect_manager.has_effect(effect_id)
+
+func is_controls_locked() -> bool:
+	return controls_locked
+
+func can_perform_action(action_name: String) -> bool:
+	var gate := ActionGate.new()
+	return gate.can_perform_action(self, action_name)

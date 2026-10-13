@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://pha58j6772cd"]
 
-[ext_resource type="Script" path="res://Scripts/inventory_ui.gd" id="1_inv_ui"]
+[ext_resource type="Script" uid="uid://bbhq2xpvo4r7h" path="res://Scripts/inventory_ui.gd" id="1_inv_ui"]
 [ext_resource type="FontFile" uid="uid://dnl8hqx2fv4sq" path="res://OtherRecources/Jersey15-Regular.ttf" id="2_font"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
@@ -14,8 +14,8 @@ corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
-shadow_size = 8
 shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
 
 [sub_resource type="LabelSettings" id="LabelSettings_title"]
 font = ExtResource("2_font")
@@ -31,7 +31,7 @@ font_color = Color(0.7, 0.75, 0.85, 0.9)
 outline_size = 2
 outline_color = Color(0, 0, 0, 0.8)
 
-[node name="InventoryUI" type="Control"]
+[node name="InventoryUI" type="Control" unique_id=1041711617]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -41,7 +41,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_inv_ui")
 
-[node name="DropBackground" type="ColorRect" parent="."]
+[node name="DropBackground" type="ColorRect" parent="." unique_id=1598869365]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -50,7 +50,8 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.35)
 
-[node name="CloseButton" type="Button" parent="."]
+[node name="CloseButton" type="Button" parent="." unique_id=1044599584]
+layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -58,11 +59,10 @@ offset_left = -52.0
 offset_top = 12.0
 offset_right = -12.0
 offset_bottom = 52.0
-grow_horizontal = 0
-text = "×"
 tooltip_text = "Close inventory"
+text = "×"
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1576559470]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -71,80 +71,79 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PanelsBox" type="HBoxContainer" parent="CenterContainer"]
+[node name="PanelsBox" type="HBoxContainer" parent="CenterContainer" unique_id=345861830]
 layout_mode = 2
 theme_override_constants/separation = 24
 alignment = 1
 
-[node name="ChestPanel" type="PanelContainer" parent="CenterContainer/PanelsBox"]
+[node name="ChestPanel" type="PanelContainer" parent="CenterContainer/PanelsBox" unique_id=34165075]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Margin" type="MarginContainer" parent="CenterContainer/PanelsBox/ChestPanel"]
+[node name="Margin" type="MarginContainer" parent="CenterContainer/PanelsBox/ChestPanel" unique_id=1913790213]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 14
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/PanelsBox/ChestPanel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/PanelsBox/ChestPanel/Margin" unique_id=19553900]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Title" type="Label" parent="CenterContainer/PanelsBox/ChestPanel/Margin/VBox"]
+[node name="Title" type="Label" parent="CenterContainer/PanelsBox/ChestPanel/Margin/VBox" unique_id=1900389107]
 layout_mode = 2
 text = "Chest"
 label_settings = SubResource("LabelSettings_title")
 horizontal_alignment = 1
 
-[node name="Grid" type="GridContainer" parent="CenterContainer/PanelsBox/ChestPanel/Margin/VBox"]
+[node name="Grid" type="GridContainer" parent="CenterContainer/PanelsBox/ChestPanel/Margin/VBox" unique_id=847431877]
 layout_mode = 2
-columns = 5
 theme_override_constants/h_separation = 6
 theme_override_constants/v_separation = 6
+columns = 5
 
-[node name="PlayerPanel" type="PanelContainer" parent="CenterContainer/PanelsBox"]
+[node name="PlayerPanel" type="PanelContainer" parent="CenterContainer/PanelsBox" unique_id=246500750]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Margin" type="MarginContainer" parent="CenterContainer/PanelsBox/PlayerPanel"]
+[node name="Margin" type="MarginContainer" parent="CenterContainer/PanelsBox/PlayerPanel" unique_id=1653742666]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 14
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/PanelsBox/PlayerPanel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/PanelsBox/PlayerPanel/Margin" unique_id=1758289264]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Title" type="Label" parent="CenterContainer/PanelsBox/PlayerPanel/Margin/VBox"]
+[node name="Title" type="Label" parent="CenterContainer/PanelsBox/PlayerPanel/Margin/VBox" unique_id=535287423]
 layout_mode = 2
 text = "Inventory"
 label_settings = SubResource("LabelSettings_title")
 horizontal_alignment = 1
 
-[node name="Grid" type="GridContainer" parent="CenterContainer/PanelsBox/PlayerPanel/Margin/VBox"]
+[node name="Grid" type="GridContainer" parent="CenterContainer/PanelsBox/PlayerPanel/Margin/VBox" unique_id=1884433352]
 layout_mode = 2
-columns = 5
 theme_override_constants/h_separation = 6
 theme_override_constants/v_separation = 6
+columns = 5
 
-[node name="HintLabel" type="Label" parent="CenterContainer/PanelsBox/PlayerPanel/Margin/VBox"]
+[node name="HintLabel" type="Label" parent="CenterContainer/PanelsBox/PlayerPanel/Margin/VBox" unique_id=916687625]
 layout_mode = 2
 text = "[LMB] Move/Place | [RMB] Split 1/2 or Place 1 | [Q] Drop | [Shift+LMB] Quick Move"
 label_settings = SubResource("LabelSettings_hint")
 horizontal_alignment = 1
 
-[node name="HeldItemPreview" type="Control" parent="."]
-layout_mode = 3
+[node name="HeldItemPreview" type="Control" parent="." unique_id=1283338131]
+visible = false
 anchors_preset = 0
 offset_right = 52.0
 offset_bottom = 52.0
 mouse_filter = 2
-visible = false
 
-[node name="Icon" type="TextureRect" parent="HeldItemPreview"]
+[node name="Icon" type="TextureRect" parent="HeldItemPreview" unique_id=2009176457]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -155,7 +154,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Count" type="Label" parent="HeldItemPreview"]
+[node name="Count" type="Label" parent="HeldItemPreview" unique_id=248116414]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -165,5 +164,5 @@ grow_vertical = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
 text = "1"
-horizontal_alignment = 2
+horizontal_alignment = 1
 vertical_alignment = 2

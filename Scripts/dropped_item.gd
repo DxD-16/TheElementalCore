@@ -5,6 +5,7 @@ extends Area2D
 
 @export var item_id: String = ""
 @export var item_count: int = 1
+@export var pick_up_timeout = 2
 
 var _picked_up: bool = false
 var _velocity: Vector2 = Vector2.ZERO
@@ -20,7 +21,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	# Задержка перед подбором (чтобы предмет успел красиво вылететь)
 	collision.set_deferred("disabled", true)
-	await get_tree().create_timer(0.35).timeout
+	await get_tree().create_timer(pick_up_timeout).timeout
 	if is_instance_valid(self) and not _picked_up:
 		collision.set_deferred("disabled", false)
 		for body in get_overlapping_bodies():

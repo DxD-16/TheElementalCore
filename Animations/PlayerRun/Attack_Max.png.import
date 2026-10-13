@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b21xioicwpy4v"
-path="res://.godot/imported/pixil-frame-0 (3).png-9c0bdc15d857a74d9a85cd0b8f7610cf.ctex"
+uid="uid://ctyr7rx8f4p7f"
+path="res://.godot/imported/Attack_Max.png-8ae7fbd6f46ebee1f28b4fc18632e0d7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Sprites/UiElements/EntityHealthBar/pixil-frame-0 (3).png"
-dest_files=["res://.godot/imported/pixil-frame-0 (3).png-9c0bdc15d857a74d9a85cd0b8f7610cf.ctex"]
+source_file="res://Animations/PlayerRun/Attack_Max.png"
+dest_files=["res://.godot/imported/Attack_Max.png-8ae7fbd6f46ebee1f28b4fc18632e0d7.ctex"]
 
 [params]
 
