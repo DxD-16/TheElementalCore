@@ -10,8 +10,13 @@ var horizontal_friction: float = 900.0
 var detection_range: float = 240.0
 var attack_range: float = 50.0
 var attack_cooldown: float = 1.0
-var resistances: Dictionary = {}
-var vulnerabilities: Dictionary = {}
+var resistances: Dictionary = {
+	"physical": 0.0,
+	"fire": 0.0,
+	"electric": 0.0,
+	"ether": 0.0,
+	"ice": 0.0
+}
 var status_immunities: Array = []
 var attack_patterns: Array = []
 var drop_table: Array = []
@@ -54,9 +59,15 @@ func _apply_data(p_data: Dictionary) -> void:
 	if p_data.has("attack_cooldown"):
 		attack_cooldown = float(p_data["attack_cooldown"])
 	if p_data.has("resistances") and p_data["resistances"] is Dictionary:
-		resistances = p_data["resistances"].duplicate()
-	if p_data.has("vulnerabilities") and p_data["vulnerabilities"] is Dictionary:
-		vulnerabilities = p_data["vulnerabilities"].duplicate()
+		var configured_resistances: Dictionary = p_data["resistances"]
+		for damage_type in resistances:
+			if not configured_resistances.has(damage_type):
+				continue
+			var resistance: Variant = configured_resistances[damage_type]
+			if not (resistance is int or resistance is float) or not is_finite(float(resistance)):
+				push_warning("EnemyDefinition resistance '%s' must be a finite number; using 0" % damage_type)
+				continue
+			resistances[damage_type] = minf(float(resistance), 1.0)
 	if p_data.has("status_immunities") and p_data["status_immunities"] is Array:
 		status_immunities = p_data["status_immunities"].duplicate()
 	if p_data.has("attack_patterns") and p_data["attack_patterns"] is Array:

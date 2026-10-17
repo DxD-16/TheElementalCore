@@ -8,7 +8,7 @@
   },
   "combat": {
 	"hit_flash_color": "#ffffff",
-	"hit_flash_duration": 0.15
+	"hit_flash_duration": 0.2
   },
   "health_bar": {
 	"delay_interval": 0.4,

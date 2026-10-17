@@ -2,7 +2,14 @@
   "dummy": {
 	"max_health": 1000,
 	"weight": 1.0,
-	"contact_damage": 30
+	"contact_damage": 5,
+	"resistances": {
+	  "physical": 0.0,
+	  "fire": 0.0,
+	  "electric": 0.0,
+	  "ether": 0.0,
+	  "ice": 0.0
+	}
   },
   "default_health": {
 	"max_health": 100

@@ -30,6 +30,8 @@ script = ExtResource("1_x66xh")
 max_health = 1000
 
 [node name="HealthBarPosition" type="Marker2D" parent="." unique_id=1416857859]
+light_mask = 2
+visibility_layer = 2
 position = Vector2(-25, -30)
 
 [node name="HealthBar" parent="HealthBarPosition" unique_id=301337473 instance=ExtResource("4_3clv1")]

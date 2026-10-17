@@ -1,0 +1,85 @@
+{
+  "timers": {
+    "element_charge_seconds": 10.0,
+    "reaction_strength_reset_seconds": 30.0
+  },
+  "charge": {
+    "threshold_percent": 100.0
+  },
+  "strength": {
+    "initial": 100.0,
+    "repeat_multiplier": 0.7,
+    "minimum": 10.0
+  },
+  "single": {
+    "1": "thermo_burst",
+    "2": "magnetic_overload",
+    "3": "hemorrhage",
+    "4": "deep_freeze"
+  },
+  "combined": {
+    "1_2": "plasma_discharge",
+    "1_3": "ether_detonation",
+    "1_4": "steam_veil",
+    "2_3": "ether_shock",
+    "2_4": "isolation",
+    "3_4": "weakness"
+  },
+  "environment": {
+    "1_5": "neutralization",
+    "1_6": "ignition",
+    "2_5": "chain_conductivity",
+    "3_5": "poison",
+    "4_5": "instant_freeze",
+    "4_6": "cold_wind"
+  },
+  "effects": {
+    "thermo_burst": {
+      "resistance_reduction_percent": 50.0,
+      "resistance_reduction_seconds": 5.0,
+      "aoe_fire_damage": 30,
+      "aoe_radius_px": 50.0
+    },
+    "hemorrhage": {
+      "pure_damage_max_health_percent": 10.0
+    },
+    "deep_freeze": {
+      "freeze_duration_seconds": 10.0,
+      "shatter_threshold_damage": 1000,
+      "shatter_bonus_damage_multiplier": 1.0
+    },
+    "plasma_discharge": {
+      "tick_interval_seconds": 1.0,
+      "stun_duration_seconds": 0.1,
+      "ticks": [
+        {
+          "damage": 100,
+          "type": "electric"
+        },
+        {
+          "damage": 100,
+          "type": "electric"
+        },
+        {
+          "damage": 150,
+          "type": "pure"
+        }
+      ]
+    },
+    "ether_detonation": {
+      "duration_seconds": 10.0,
+      "explosion_fire_damage": 300,
+      "explosion_radius_px": 40.0,
+      "shockwave_fire_damage": 30,
+      "shockwave_radius_px": 40.0
+    },
+    "magnetic_overload": {
+      "attraction_duration_seconds": 3.0,
+      "attraction_radius_px": 200.0,
+      "attraction_acceleration_px_per_second_squared": 40.0,
+      "discharge_radius_px": 100.0,
+      "discharge_electric_damage": 100,
+      "discharge_knockback": 300.0
+    }
+  }
+}

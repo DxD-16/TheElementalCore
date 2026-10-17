@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ctyr7rx8f4p7f"
-path="res://.godot/imported/Attack_Max.png-064cf003ae11f22372e8520ab21dcf35.ctex"
+uid="uid://dpo5o8t18p5c2"
+path="res://.godot/imported/Jump_Max.png-8983b963ddb8563badcd418375b5d144.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Animations/player/Attack_Max.png"
-dest_files=["res://.godot/imported/Attack_Max.png-064cf003ae11f22372e8520ab21dcf35.ctex"]
+source_file="res://Animations/player/Maxim'sAnimations/Jump_Max.png"
+dest_files=["res://.godot/imported/Jump_Max.png-8983b963ddb8563badcd418375b5d144.ctex"]
 
 [params]
 

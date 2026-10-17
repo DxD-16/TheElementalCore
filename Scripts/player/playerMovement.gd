@@ -65,6 +65,7 @@ const PLAYER_DAMAGE_COLOR := Color(0.871, 0.620, 0.255)
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 @export var inventory_data: InventoryData
+@export var starting_weapon: WeaponData = preload("res://Resources/Weapons/light_sword.tres")
 
 var _dash_collision_shape: CapsuleShape2D
 var _standing_collision_height: float = 0.0
@@ -79,6 +80,11 @@ func _ready() -> void:
 	weapon_controller.source = self
 	weapon_controller.name = "WeaponController"
 	add_child(weapon_controller)
+	if not weapon_controller.equip_weapon(starting_weapon):
+		push_error("Player could not equip its starting weapon")
+	if inventory_data and not inventory_data.equipment_changed.is_connected(_on_equipment_changed):
+		inventory_data.equipment_changed.connect(_on_equipment_changed)
+	_sync_equipped_weapon()
 	_cache_dash_collision_shape()
 	_load_config()
 	_setup_dash_input()
@@ -319,6 +325,27 @@ func set_controls_locked(locked: bool) -> void:
 
 func get_weapon_controller() -> WeaponController:
 	return weapon_controller
+
+func equip_weapon(weapon: WeaponData) -> bool:
+	if weapon_controller == null:
+		push_error("Player cannot equip a weapon before its WeaponController is ready")
+		return false
+	return weapon_controller.equip_weapon(weapon)
+
+func _on_equipment_changed() -> void:
+	_sync_equipped_weapon()
+
+func _sync_equipped_weapon() -> void:
+	if weapon_controller == null:
+		return
+	var weapon_item: ItemData
+	if inventory_data:
+		weapon_item = inventory_data.backup_weapon if inventory_data.active_weapon_slot == "backup" else inventory_data.primary_weapon
+	var weapon := weapon_item.weapon_definition if weapon_item else starting_weapon
+	if weapon != null and (
+		weapon_controller.weapon_data == null or weapon_controller.weapon_data.id != weapon.id
+	) and not weapon_controller.equip_weapon(weapon):
+		push_warning("Player could not switch to the selected equipped weapon")
 
 func has_status(effect_id: String) -> bool:
 	return status_effect_manager != null and status_effect_manager.has_effect(effect_id)

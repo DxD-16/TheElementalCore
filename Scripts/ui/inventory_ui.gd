@@ -1,110 +1,114 @@
 class_name InventoryUI
 extends Control
 
-## Полнофункциональный интерфейс инвентаря игрока и сундуков.
-## Поддерживает:
-## - Перекладывание предметов (ЛКМ / клик-перенос)
-## - Разделение стаков (ПКМ берет половину, ПКМ раскладывает по 1)
-## - Быстрое перемещение между сундуком и инвентарем (Shift+ЛКМ)
-## - Выбрасывание предметов в мир (клик вне окна или клавиша Q)
-## - Подсветку рамок: обычная, наведение (Hover) и выделенный слот (Selected)
-
-const JERSEY_FONT = preload("res://Fonts/jersey15-regular.ttf")
-
-@export var slot_size: Vector2 = Vector2(52, 52)
-@export var player_columns: int = 5
-@export var chest_columns: int = 5
-
-var player_inventory: InventoryData = null
-var chest_inventory: InventoryData = null
-var current_chest: Chest = null
-
+var player_inventory: InventoryData
+var chest_inventory: InventoryData
+var current_chest: Node
+var held_item: ItemData
+var held_quantity: int = 0
+var held_source_inv: InventoryData
+var held_source_index: int = -1
+var hovered_inv: InventoryData
+var hovered_index: int = -1
+var selected_category: String = "all"
+var pinned_item: ItemData
 var _is_open: bool = false
 
-# Удерживаемый на курсоре предмет
-var held_item: ItemData = null
-var held_quantity: int = 0
-var held_source_inv: InventoryData = null
-var held_source_index: int = -1
+@export var lock_player_controls_when_open: bool = true
 
-# Текущий слот под курсором
-var hovered_inv: InventoryData = null
-var hovered_index: int = -1
-
-# Ссылки на ноды UI
-@onready var drop_background: ColorRect = $DropBackground
-@onready var chest_panel: PanelContainer = $CenterContainer/PanelsBox/ChestPanel
-@onready var chest_title: Label = $CenterContainer/PanelsBox/ChestPanel/Margin/VBox/Title
-@onready var chest_grid: GridContainer = $CenterContainer/PanelsBox/ChestPanel/Margin/VBox/Grid
-@onready var player_panel: PanelContainer = $CenterContainer/PanelsBox/PlayerPanel
-@onready var player_title: Label = $CenterContainer/PanelsBox/PlayerPanel/Margin/VBox/Title
-@onready var player_grid: GridContainer = $CenterContainer/PanelsBox/PlayerPanel/Margin/VBox/Grid
-@onready var held_preview: Control = $HeldItemPreview
-@onready var held_icon: TextureRect = $HeldItemPreview/Icon
-@onready var held_count: Label = $HeldItemPreview/Count
-@onready var close_button: Button = $CloseButton
-
-# Кеш созданных слотов: inv -> Array[PanelContainer]
-var _slot_panels: Dictionary = {}
-
-# Стили для подсветки рамок слотов
-var style_normal: StyleBoxFlat
-var style_hover: StyleBoxFlat
-var style_selected: StyleBoxFlat
+var category_buttons: Dictionary = {}
+var player_grid: GridContainer
+var chest_grid: GridContainer
+var chest_placeholder: Label
+var chest_title: Label
+var description_title: Label
+var description_text: Label
+var equipment_slots: Dictionary = {}
+var player_slot_buttons: Array[Button] = []
+var chest_slot_buttons: Array[Button] = []
+var close_button: Button
+var held_preview: Control
+var held_icon: TextureRect
+var held_count: Label
 
 func _ready() -> void:
 	add_to_group("InventoryUI")
 	visible = false
-	_is_open = false
-
-	_init_styles()
+	_bind_scene_nodes()
 	_setup_input()
+	_find_player_inventory()
 
-	if close_button:
-		close_button.pressed.connect(close)
+func _bind_scene_nodes() -> void:
+	player_grid = get_node("Center/Panels/InventoryPanel/Margin/Content/PlayerInventoryPanel/Margin/Content/Grid")
+	chest_grid = get_node("Center/Panels/InventoryPanel/Margin/Content/LowerPanel/Margin/Content/Grid")
+	chest_placeholder = get_node("Center/Panels/InventoryPanel/Margin/Content/LowerPanel/Margin/Content/Placeholder")
+	chest_title = get_node("Center/Panels/InventoryPanel/Margin/Content/LowerPanel/Margin/Content/Title")
+	description_title = get_node("Center/Panels/CategoriesPanel/Margin/Content/DetailsPanel/Margin/Content/Title")
+	description_text = get_node("Center/Panels/CategoriesPanel/Margin/Content/DetailsPanel/Margin/Content/DescriptionScroll/Description")
+	close_button = get_node("Center/Panels/EquipmentPanel/Margin/Content/Header/CloseButton")
+	held_preview = get_node("HeldItemPreview")
+	held_icon = get_node("HeldItemPreview/Icon")
+	held_count = get_node("HeldItemPreview/Count")
 
-	if drop_background:
-		drop_background.gui_input.connect(_on_drop_background_input)
+	var category_ids := {
+		"all": "AllItems",
+		"weapon": "Weapons",
+		"stone": "Stones",
+		"accessory": "Accessories",
+		"consumable": "Consumables",
+		"material": "Materials",
+		"story": "StoryItems"
+	}
+	for category_id in category_ids:
+		var button := get_node("Center/Panels/CategoriesPanel/Margin/Content/CategoryButtons/%s" % category_ids[category_id]) as Button
+		category_buttons[category_id] = button
+		button.pressed.connect(_select_category.bind(category_id))
 
-	call_deferred("_find_player_inventory")
+	for slot_id in [
+		"primary_weapon", "primary_weapon_stone", "backup_weapon", "backup_weapon_stone",
+		"accessory_0", "accessory_stone_0", "accessory_1", "accessory_stone_1",
+		"accessory_2", "accessory_3", "accessory_4", "accessory_5", "accessory_6",
+		"consumable_0", "consumable_1"
+	]:
+		var button := find_child("Equipment_%s" % slot_id, true, false) as Button
+		equipment_slots[slot_id] = button
+		button.pressed.connect(_on_equipment_slot_pressed.bind(slot_id))
+		button.gui_input.connect(_on_equipment_slot_input.bind(slot_id))
+		button.mouse_entered.connect(_on_equipment_slot_hovered.bind(slot_id))
 
-func _init_styles() -> void:
-	# Обычный слот
-	style_normal = StyleBoxFlat.new()
-	style_normal.bg_color = Color(0.12, 0.13, 0.19, 0.9)
-	style_normal.border_color = Color(0.3, 0.34, 0.45, 0.7)
-	style_normal.set_border_width_all(1)
-	style_normal.set_corner_radius_all(6)
+	close_button.pressed.connect(close)
+	(get_node("DropBackground") as ColorRect).gui_input.connect(_on_drop_background_input)
 
-	# Наведение (Hover)
-	style_hover = StyleBoxFlat.new()
-	style_hover.bg_color = Color(0.18, 0.2, 0.28, 0.95)
-	style_hover.border_color = Color(0.7, 0.8, 1.0, 0.95)
-	style_hover.set_border_width_all(2)
-	style_hover.set_corner_radius_all(6)
+	for child in player_grid.get_children():
+		var button := child as Button
+		player_slot_buttons.append(button)
+		button.gui_input.connect(_on_player_slot_input.bind(player_slot_buttons.size() - 1))
+		button.mouse_entered.connect(_on_player_slot_hovered.bind(player_slot_buttons.size() - 1))
+		button.mouse_exited.connect(_on_player_slot_exited.bind(player_slot_buttons.size() - 1))
 
-	# Выделенный предмет / источник (Selected)
-	style_selected = StyleBoxFlat.new()
-	style_selected.bg_color = Color(0.24, 0.22, 0.14, 0.95)
-	style_selected.border_color = Color(1.0, 0.82, 0.2, 1.0) # Яркое золото
-	style_selected.set_border_width_all(2)
-	style_selected.set_corner_radius_all(6)
+	for child in chest_grid.get_children():
+		var button := child as Button
+		chest_slot_buttons.append(button)
+		button.gui_input.connect(_on_chest_slot_input.bind(chest_slot_buttons.size() - 1))
+		button.mouse_entered.connect(_on_chest_slot_hovered.bind(chest_slot_buttons.size() - 1))
+		button.mouse_exited.connect(_on_chest_slot_exited.bind(chest_slot_buttons.size() - 1))
+
+	_select_category("all")
 
 func _setup_input() -> void:
 	if not InputMap.has_action("toggle_inventory"):
 		InputMap.add_action("toggle_inventory")
-		var ev_tab := InputEventKey.new()
-		ev_tab.physical_keycode = KEY_TAB
-		InputMap.action_add_event("toggle_inventory", ev_tab)
-		var ev_i := InputEventKey.new()
-		ev_i.physical_keycode = KEY_I
-		InputMap.action_add_event("toggle_inventory", ev_i)
-
+		var tab_event := InputEventKey.new()
+		tab_event.physical_keycode = KEY_TAB
+		InputMap.action_add_event("toggle_inventory", tab_event)
+		var i_event := InputEventKey.new()
+		i_event.physical_keycode = KEY_I
+		InputMap.action_add_event("toggle_inventory", i_event)
 	if not InputMap.has_action("interact"):
 		InputMap.add_action("interact")
-		var ev_e := InputEventKey.new()
-		ev_e.physical_keycode = KEY_E
-		InputMap.action_add_event("interact", ev_e)
+		var interact_event := InputEventKey.new()
+		interact_event.physical_keycode = KEY_E
+		InputMap.action_add_event("interact", interact_event)
 
 func _find_player_inventory() -> void:
 	var player := get_tree().get_first_node_in_group("Player")
@@ -113,18 +117,15 @@ func _find_player_inventory() -> void:
 	if player_inventory:
 		if not player_inventory.inventory_changed.is_connected(_refresh_ui):
 			player_inventory.inventory_changed.connect(_refresh_ui)
-		_build_grid(player_inventory, player_grid, player_columns)
+		if not player_inventory.equipment_changed.is_connected(_refresh_ui):
+			player_inventory.equipment_changed.connect(_refresh_ui)
+		_refresh_ui()
 
 func _process(_delta: float) -> void:
-	if not _is_open:
+	if not _is_open or held_item == null:
 		return
-
-	# Обновление позиции удерживаемого предмета за курсором мыши
-	if held_item != null:
-		held_preview.visible = true
-		held_preview.global_position = get_global_mouse_position() - held_preview.size * 0.5
-	else:
-		held_preview.visible = false
+	held_preview.visible = true
+	held_preview.global_position = get_global_mouse_position() - held_preview.size * 0.5
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _is_open:
@@ -132,18 +133,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			toggle()
 			get_viewport().set_input_as_handled()
 		return
-
-	# Закрытие по Tab, I или Esc
 	if event.is_action_pressed("toggle_inventory") or event.is_action_pressed("ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()
-		return
-
-	# Выбрасывание по клавише Q
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.physical_keycode == KEY_Q:
-			_handle_q_drop(event.ctrl_pressed)
-			get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_Q:
+		_handle_q_drop(event.ctrl_pressed)
+		get_viewport().set_input_as_handled()
 
 func toggle() -> void:
 	if _is_open:
@@ -154,70 +149,388 @@ func toggle() -> void:
 func open_player_only() -> void:
 	if player_inventory == null:
 		_find_player_inventory()
+	current_chest = null
+	chest_inventory = null
 	_is_open = true
 	visible = true
 	_set_player_controls_locked(true)
-	if chest_panel:
-		chest_panel.visible = false
-	chest_inventory = null
-	current_chest = null
-
+	_update_lower_panel()
 	_refresh_ui()
 
-func open_chest(chest: Chest) -> void:
+func open_chest(chest: Node) -> void:
 	if player_inventory == null:
 		_find_player_inventory()
 	current_chest = chest
-	chest_inventory = chest.inventory_data
+	chest_inventory = chest.get_node_or_null("InventoryData") as InventoryData
+	if chest_inventory == null:
+		push_error("Inventory UI cannot open a chest without InventoryData")
+		current_chest = null
+		return
 	_is_open = true
 	visible = true
-	_set_player_controls_locked(true)
-
-	if chest_panel:
-		chest_panel.visible = true
-		if chest_title:
-			chest_title.text = chest.chest_name
-
-	if chest_inventory:
-		if not chest_inventory.inventory_changed.is_connected(_refresh_ui):
-			chest_inventory.inventory_changed.connect(_refresh_ui)
-		_build_grid(chest_inventory, chest_grid, chest_columns)
-
+	if lock_player_controls_when_open:
+		_set_player_controls_locked(true)
+	if chest_inventory and not chest_inventory.inventory_changed.is_connected(_refresh_ui):
+		chest_inventory.inventory_changed.connect(_refresh_ui)
+	_update_lower_panel()
 	_refresh_ui()
 
 func close_chest() -> void:
-	if current_chest != null:
-		current_chest = null
+	current_chest = null
 	chest_inventory = null
-	if chest_panel:
-		chest_panel.visible = false
+	_update_lower_panel()
 	if _is_open:
-		# Если был открыт сундук, при закрытии закрываем и UI
 		close()
 
 func close() -> void:
 	_return_or_drop_held_item()
-
 	_is_open = false
 	visible = false
 	_set_player_controls_locked(false)
 	hovered_inv = null
 	hovered_index = -1
-
-	if current_chest != null:
-		var c := current_chest
+	_clear_pinned_details()
+	_show_empty_details()
+	if current_chest and is_instance_valid(current_chest):
+		var chest := current_chest
 		current_chest = null
 		chest_inventory = null
-		if is_instance_valid(c):
-			c.close_chest()
+		if chest.has_method("close_chest"):
+			chest.call("close_chest")
+	else:
+		current_chest = null
+		chest_inventory = null
 
-	if chest_panel:
-		chest_panel.visible = false
+func _update_lower_panel() -> void:
+	if chest_title == null or chest_grid == null:
+		return
+	if chest_inventory:
+		var title := str(current_chest.get("chest_name")) if current_chest else "Chest"
+		chest_title.text = "%s Contents" % title
+		chest_placeholder.visible = false
+	else:
+		chest_title.text = "Craftables — Coming Soon"
+		chest_placeholder.visible = true
 
 func _set_player_controls_locked(locked: bool) -> void:
-	var player := get_tree().get_first_node_in_group("Player") as Player
-	if player:
-		player.set_controls_locked(locked)
+	var player := get_tree().get_first_node_in_group("Player")
+	if player and player.has_method("set_controls_locked"):
+		player.call("set_controls_locked", locked)
+
+func _select_category(category_id: String) -> void:
+	selected_category = category_id
+	for id in category_buttons:
+		var button: Button = category_buttons[id]
+		button.button_pressed = id == category_id
+		button.toggle_mode = true
+	_refresh_player_grid()
+
+func _category_for_item(item: ItemData) -> String:
+	match item.type:
+		"weapon", "stone", "accessory", "consumable", "material":
+			return item.type
+		_:
+			return "story"
+
+func _refresh_ui() -> void:
+	_refresh_player_grid()
+	_refresh_chest_grid()
+	_refresh_equipment_slots()
+
+func _refresh_player_grid() -> void:
+	if player_grid == null:
+		return
+	if player_inventory == null:
+		for button in player_slot_buttons:
+			button.visible = false
+		return
+	_update_inventory_grid(player_inventory, player_slot_buttons)
+
+func _refresh_chest_grid() -> void:
+	if chest_grid == null:
+		return
+	if chest_inventory == null:
+		for button in chest_slot_buttons:
+			button.visible = false
+		return
+	_update_inventory_grid(chest_inventory, chest_slot_buttons)
+
+func _update_inventory_grid(inventory: InventoryData, buttons: Array[Button]) -> void:
+	if inventory.slots.size() > buttons.size():
+		push_error("Inventory has %d slots, but its scene grid only contains %d slot controls" % [
+			inventory.slots.size(),
+			buttons.size()
+		])
+	for index in range(buttons.size()):
+		var button := buttons[index]
+		button.visible = index < inventory.slots.size()
+		if button.visible:
+			_update_inventory_slot(button, inventory, index)
+
+func _update_inventory_slot(button: Button, inventory: InventoryData, index: int) -> void:
+	button.icon = null
+	button.text = ""
+	button.tooltip_text = ""
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	var slot := inventory.slots[index]
+	var show_item := not slot.is_empty()
+	if show_item and inventory == player_inventory and selected_category != "all":
+		show_item = _category_for_item(slot.item) == selected_category
+	if show_item:
+		var item := slot.item
+		button.tooltip_text = "%s\n%s" % [item.item_name, item.description]
+		if item.type == "consumable" and inventory == player_inventory and chest_inventory == null:
+			button.tooltip_text += "\nRight-click to use"
+		var icon := item.get_icon()
+		if icon:
+			button.icon = icon
+		button.text = "%s%s" % [item.item_name, " x%d" % slot.quantity if slot.quantity > 1 else ""]
+
+func _on_player_slot_input(event: InputEvent, index: int) -> void:
+	if player_inventory:
+		_on_inventory_slot_input(event, player_inventory, index)
+
+func _on_chest_slot_input(event: InputEvent, index: int) -> void:
+	if chest_inventory:
+		_on_inventory_slot_input(event, chest_inventory, index)
+
+func _on_player_slot_hovered(index: int) -> void:
+	if player_inventory:
+		_on_inventory_slot_hovered(player_inventory, index)
+
+func _on_chest_slot_hovered(index: int) -> void:
+	if chest_inventory:
+		_on_inventory_slot_hovered(chest_inventory, index)
+
+func _on_player_slot_exited(index: int) -> void:
+	if player_inventory:
+		_on_inventory_slot_exited(player_inventory, index)
+
+func _on_chest_slot_exited(index: int) -> void:
+	if chest_inventory:
+		_on_inventory_slot_exited(chest_inventory, index)
+
+func _on_inventory_slot_input(event: InputEvent, inventory: InventoryData, index: int) -> void:
+	if not event is InputEventMouseButton or not event.pressed:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event.button_index == MOUSE_BUTTON_LEFT or mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+		_pin_slot_details(inventory, index)
+	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+		if Input.is_key_pressed(KEY_SHIFT) and chest_inventory:
+			if inventory == player_inventory:
+				inventory.quick_transfer(index, chest_inventory)
+			elif inventory == chest_inventory:
+				inventory.quick_transfer(index, player_inventory)
+		else:
+			_handle_left_click(inventory, index)
+	elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+		_handle_right_click(inventory, index)
+	accept_event()
+
+func _handle_left_click(inventory: InventoryData, index: int) -> void:
+	if held_item == null:
+		var taken := inventory.take_all(index)
+		if taken.item:
+			held_item = taken.item
+			held_quantity = taken.quantity
+			held_source_inv = inventory
+			held_source_index = index
+	else:
+		var result := inventory.place_or_merge(index, held_item, held_quantity)
+		held_item = result.item
+		held_quantity = result.quantity
+		if held_item == null:
+			_clear_held_source()
+	_update_held_preview()
+	_refresh_ui()
+
+func _handle_right_click(inventory: InventoryData, index: int) -> void:
+	if held_item == null:
+		var slot := inventory.slots[index]
+		if not slot.is_empty() and slot.item.type == "consumable" and inventory == player_inventory and chest_inventory == null:
+			inventory.use_item(index)
+		else:
+			var taken := inventory.take_half(index)
+			held_item = taken.item
+			held_quantity = taken.quantity
+			held_source_inv = inventory if held_item else null
+			held_source_index = index if held_item else -1
+	else:
+		if inventory.place_one(index, held_item):
+			held_quantity -= 1
+			if held_quantity <= 0:
+				held_item = null
+				_clear_held_source()
+	_update_held_preview()
+	_refresh_ui()
+
+func _on_equipment_slot_pressed(slot_id: String) -> void:
+	if player_inventory == null:
+		return
+	var preview_item := held_item if held_item else player_inventory.get_equipment_item(slot_id)
+	if preview_item:
+		_pin_item_details(preview_item)
+	else:
+		_clear_pinned_details()
+		description_title.text = _equipment_slot_label(slot_id)
+		description_text.text = "Empty equipment slot."
+	if held_item == null:
+		var equipped := player_inventory.get_equipment_item(slot_id)
+		if equipped and player_inventory.set_equipment_item(slot_id, null):
+			held_item = equipped
+			held_quantity = 1
+			held_source_inv = player_inventory
+			held_source_index = -1
+	else:
+		var current_item := player_inventory.get_equipment_item(slot_id)
+		if held_item.stackable and current_item != null:
+			return
+		if player_inventory.set_equipment_item(slot_id, held_item):
+			var placed_item := held_item
+			held_quantity -= 1
+			held_item = current_item
+			if held_item == null and held_quantity > 0:
+				held_item = placed_item
+			if held_item == null:
+				_clear_held_source()
+			elif held_quantity <= 0:
+				held_quantity = 1
+	_update_held_preview()
+	_refresh_ui()
+
+func _on_equipment_slot_input(event: InputEvent, slot_id: String) -> void:
+	if not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_RIGHT:
+		return
+	if slot_id.begins_with("consumable_") and player_inventory:
+		player_inventory.use_equipped_consumable(int(slot_id.trim_prefix("consumable_")))
+	accept_event()
+
+func _refresh_equipment_slots() -> void:
+	if player_inventory == null:
+		return
+	for slot_id in equipment_slots:
+		var button: Button = equipment_slots[slot_id]
+		var item := player_inventory.get_equipment_item(slot_id)
+		var label_text := _equipment_slot_label(slot_id)
+		if item:
+			button.text = item.item_name
+			button.tooltip_text = "%s\n%s" % [item.item_name, item.description]
+			var icon := item.get_icon()
+			button.icon = icon
+		else:
+			button.text = label_text
+			button.tooltip_text = label_text
+			button.icon = null
+	if player_inventory.has_method("get_active_weapon_slot"):
+		var active := str(player_inventory.call("get_active_weapon_slot"))
+		var active_button := find_child("ActiveWeaponButton", true, false) as Button
+		if active_button:
+			active_button.text = "Use Backup Weapon" if active == "primary" else "Use Primary Weapon"
+
+func _equipment_slot_label(slot_id: String) -> String:
+	match slot_id:
+		"primary_weapon":
+			return "Primary Weapon"
+		"primary_weapon_stone":
+			return "Weapon Stone"
+		"backup_weapon":
+			return "Backup Weapon"
+		"backup_weapon_stone":
+			return "Weapon Stone"
+		"accessory_0", "accessory_1", "accessory_2", "accessory_3", "accessory_4", "accessory_5", "accessory_6":
+			return "Accessory %d" % (int(slot_id.trim_prefix("accessory_")) + 1)
+		"accessory_stone_0", "accessory_stone_1":
+			return "Stone"
+		"consumable_0", "consumable_1":
+			return "Consumable %d" % (int(slot_id.trim_prefix("consumable_")) + 1)
+	return "Empty Slot"
+
+func _toggle_active_weapon() -> void:
+	if player_inventory:
+		player_inventory.set_active_weapon_slot(
+			"backup" if player_inventory.active_weapon_slot == "primary" else "primary"
+		)
+
+func _on_inventory_slot_hovered(inventory: InventoryData, index: int) -> void:
+	hovered_inv = inventory
+	hovered_index = index
+	if index < inventory.slots.size() and not inventory.slots[index].is_empty():
+		_show_item_details(inventory.slots[index].item)
+	elif pinned_item:
+		_show_item_details(pinned_item)
+	else:
+		_show_empty_details()
+
+func _on_inventory_slot_exited(inventory: InventoryData, index: int) -> void:
+	if hovered_inv == inventory and hovered_index == index:
+		hovered_inv = null
+		hovered_index = -1
+		if pinned_item:
+			_show_item_details(pinned_item)
+		else:
+			_show_empty_details()
+
+func _on_equipment_slot_hovered(slot_id: String) -> void:
+	if player_inventory == null:
+		return
+	var item := player_inventory.get_equipment_item(slot_id)
+	if item:
+		_show_item_details(item)
+	elif pinned_item:
+		_show_item_details(pinned_item)
+	else:
+		description_title.text = _equipment_slot_label(slot_id)
+		description_text.text = "Empty equipment slot."
+
+func _pin_slot_details(inventory: InventoryData, index: int) -> void:
+	if index < inventory.slots.size() and not inventory.slots[index].is_empty():
+		_pin_item_details(inventory.slots[index].item)
+
+func _pin_item_details(item: ItemData) -> void:
+	pinned_item = item
+	_show_item_details(item)
+
+func _clear_pinned_details() -> void:
+	pinned_item = null
+
+func _show_item_details(item: ItemData) -> void:
+	description_title.text = item.item_name
+	description_text.text = item.description if item.description != "" else "No description available."
+
+func _show_empty_details() -> void:
+	description_title.text = "Item Details"
+	description_text.text = "Hover or click an item to see its description."
+
+func _handle_q_drop(drop_all: bool) -> void:
+	if held_item and held_quantity > 0:
+		var amount := held_quantity if drop_all else 1
+		held_quantity -= amount
+		if player_inventory:
+			player_inventory.spawn_world_drop(held_item, amount)
+		if held_quantity <= 0:
+			held_item = null
+			_clear_held_source()
+		_update_held_preview()
+	elif hovered_inv and hovered_index >= 0:
+		hovered_inv.drop_item(hovered_index, -1 if drop_all else 1)
+	_refresh_ui()
+
+func _on_drop_background_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_LEFT and held_item and held_quantity > 0:
+			if player_inventory:
+				player_inventory.spawn_world_drop(held_item, held_quantity)
+			held_item = null
+			held_quantity = 0
+			_clear_held_source()
+			_update_held_preview()
+			_refresh_ui()
 
 func _return_or_drop_held_item() -> void:
 	if held_item == null or held_quantity <= 0:
@@ -225,272 +538,29 @@ func _return_or_drop_held_item() -> void:
 		held_quantity = 0
 		_update_held_preview()
 		return
-
-	# Сначала пытаемся вернуть в исходный инвентарь
-	var target_inv := held_source_inv if held_source_inv != null else player_inventory
-	if target_inv != null:
-		var leftover := target_inv.add_item(held_item, held_quantity)
+	var target_inventory := held_source_inv if held_source_inv else player_inventory
+	if target_inventory:
+		var leftover := target_inventory.add_item(held_item, held_quantity)
 		if leftover > 0:
-			# Если не поместилось, выбрасываем остаток в мир
-			target_inv.spawn_world_drop(held_item, leftover)
-	else:
-		if player_inventory:
-			player_inventory.spawn_world_drop(held_item, held_quantity)
-
+			target_inventory.spawn_world_drop(held_item, leftover)
+	elif player_inventory:
+		player_inventory.spawn_world_drop(held_item, held_quantity)
 	held_item = null
 	held_quantity = 0
+	_clear_held_source()
+	_update_held_preview()
+
+func _clear_held_source() -> void:
 	held_source_inv = null
 	held_source_index = -1
-	_update_held_preview()
-
-func _build_grid(inv: InventoryData, grid: GridContainer, cols: int) -> void:
-	if inv == null or grid == null:
-		return
-
-	# Очистка старых слотов
-	for child in grid.get_children():
-		child.queue_free()
-
-	grid.columns = cols
-	var panels: Array[PanelContainer] = []
-
-	for i in inv.slots.size():
-		var slot_ui := _create_slot_panel(inv, i)
-		grid.add_child(slot_ui)
-		panels.append(slot_ui)
-
-	_slot_panels[inv] = panels
-
-func _create_slot_panel(inv: InventoryData, index: int) -> PanelContainer:
-	var slot_panel := PanelContainer.new()
-	slot_panel.custom_minimum_size = slot_size
-	slot_panel.name = "Slot_%d" % index
-	slot_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	slot_panel.add_theme_stylebox_override("panel", style_normal)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 3)
-	margin.add_theme_constant_override("margin_top", 3)
-	margin.add_theme_constant_override("margin_right", 3)
-	margin.add_theme_constant_override("margin_bottom", 3)
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot_panel.add_child(margin)
-
-	var icon := TextureRect.new()
-	icon.name = "Icon"
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_child(icon)
-
-	var count_label := Label.new()
-	count_label.name = "Count"
-	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	count_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	count_label.anchors_preset = Control.PRESET_FULL_RECT
-	count_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	count_label.add_theme_font_override("font", JERSEY_FONT)
-	count_label.add_theme_font_size_override("font_size", 14)
-	count_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
-	count_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	count_label.add_theme_constant_override("outline_size", 2)
-	margin.add_child(count_label)
-
-	# Сигналы ввода и наведения
-	slot_panel.gui_input.connect(_on_slot_gui_input.bind(inv, index))
-	slot_panel.mouse_entered.connect(_on_slot_mouse_entered.bind(inv, index, slot_panel))
-	slot_panel.mouse_exited.connect(_on_slot_mouse_exited.bind(inv, index, slot_panel))
-
-	return slot_panel
-
-func _on_slot_mouse_entered(inv: InventoryData, index: int, slot_panel: PanelContainer) -> void:
-	hovered_inv = inv
-	hovered_index = index
-	_update_slot_style(inv, index, slot_panel, true)
-
-func _on_slot_mouse_exited(inv: InventoryData, index: int, slot_panel: PanelContainer) -> void:
-	if hovered_inv == inv and hovered_index == index:
-		hovered_inv = null
-		hovered_index = -1
-	_update_slot_style(inv, index, slot_panel, false)
-
-func _update_slot_style(inv: InventoryData, index: int, slot_panel: PanelContainer, is_hover: bool) -> void:
-	# Выделенный слот (когда взят на курсор)
-	if held_item != null and held_source_inv == inv and held_source_index == index:
-		slot_panel.add_theme_stylebox_override("panel", style_selected)
-	elif is_hover:
-		slot_panel.add_theme_stylebox_override("panel", style_hover)
-	else:
-		slot_panel.add_theme_stylebox_override("panel", style_normal)
-
-func _on_slot_gui_input(event: InputEvent, inv: InventoryData, index: int) -> void:
-	if not event is InputEventMouseButton:
-		return
-
-	var mb := event as InputEventMouseButton
-	if not mb.pressed:
-		return
-
-	var is_shift: bool = Input.is_key_pressed(KEY_SHIFT)
-
-	# 1. Левый клик (ЛКМ)
-	if mb.button_index == MOUSE_BUTTON_LEFT:
-		if is_shift:
-			# Shift+ЛКМ: Быстрое перемещение (Quick Transfer)
-			_handle_shift_click(inv, index)
-		else:
-			# Обычный ЛКМ: Взять / положить / объединить / поменять
-			_handle_left_click(inv, index)
-
-	# 2. Правый клик (ПКМ)
-	elif mb.button_index == MOUSE_BUTTON_RIGHT:
-		# Обычный ПКМ: Разделение стака (взять 1/2) или положить ровно 1
-		_handle_right_click(inv, index)
-
-func _handle_left_click(inv: InventoryData, index: int) -> void:
-	if held_item == null:
-		# Рука пуста -> забираем весь слот
-		var taken := inv.take_all(index)
-		if taken.item != null:
-			held_item = taken.item
-			held_quantity = taken.quantity
-			held_source_inv = inv
-			held_source_index = index
-	else:
-		# В руке есть предмет -> кладём / объединяем / меняем
-		var res := inv.place_or_merge(index, held_item, held_quantity)
-		held_item = res.item
-		held_quantity = res.quantity
-		if held_item == null:
-			held_source_inv = null
-			held_source_index = -1
-
-	_update_held_preview()
-	_refresh_ui()
-
-func _handle_right_click(inv: InventoryData, index: int) -> void:
-	if held_item == null:
-		# Рука пуста:
-		# Если это расходуемый предмет и сундук закрыт — используем его
-		var slot := inv.slots[index]
-		if not slot.is_empty() and slot.item.type == "consumable" and chest_inventory == null:
-			inv.use_item(index)
-		else:
-			# Иначе забираем половину стака (Разделение стака)
-			var taken := inv.take_half(index)
-			if taken.item != null:
-				held_item = taken.item
-				held_quantity = taken.quantity
-				held_source_inv = inv
-				held_source_index = index
-	else:
-		# В руке есть предмет -> кладём ровно 1 штуку в слот
-		if inv.place_one(index, held_item):
-			held_quantity -= 1
-			if held_quantity <= 0:
-				held_item = null
-				held_source_inv = null
-				held_source_index = -1
-
-	_update_held_preview()
-	_refresh_ui()
-
-func _handle_shift_click(inv: InventoryData, index: int) -> void:
-	# Быстрое перемещение между инвентарем игрока и сундуком
-	if chest_inventory != null and player_inventory != null:
-		if inv == player_inventory:
-			inv.quick_transfer(index, chest_inventory)
-		elif inv == chest_inventory:
-			inv.quick_transfer(index, player_inventory)
-	else:
-		# Если сундук не открыт, Shift+клик по зелью использует его
-		var slot := inv.slots[index]
-		if not slot.is_empty() and slot.item.type == "consumable":
-			inv.use_item(index)
-
-	_refresh_ui()
-
-func _handle_q_drop(drop_all: bool) -> void:
-	# Выбрасывание в мир
-	if held_item != null and held_quantity > 0:
-		var amount := held_quantity if drop_all else 1
-		held_quantity -= amount
-		if player_inventory:
-			player_inventory.spawn_world_drop(held_item, amount)
-		if held_quantity <= 0:
-			held_item = null
-			held_source_inv = null
-			held_source_index = -1
-		_update_held_preview()
-		_refresh_ui()
-	elif hovered_inv != null and hovered_index >= 0:
-		var amount := -1 if drop_all else 1
-		hovered_inv.drop_item(hovered_index, amount)
-		_refresh_ui()
-
-func _on_drop_background_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-			# Клик по пустому пространству вне окон инвентаря
-			if held_item != null and held_quantity > 0:
-				# Выбрасываем предмет в мир!
-				if player_inventory:
-					player_inventory.spawn_world_drop(held_item, held_quantity)
-				held_item = null
-				held_quantity = 0
-				held_source_inv = null
-				held_source_index = -1
-				_update_held_preview()
-				_refresh_ui()
 
 func _update_held_preview() -> void:
-	if held_item != null and held_quantity > 0:
-		held_preview.visible = true
-		held_preview.global_position = get_global_mouse_position() - held_preview.size * 0.5
-		if held_icon:
-			held_icon.texture = held_item.get_icon()
-		if held_count:
-			held_count.text = str(held_quantity) if held_quantity > 1 else ""
+	if held_preview == null:
+		return
+	held_preview.visible = held_item != null and held_quantity > 0
+	if held_item and held_quantity > 0:
+		held_icon.texture = held_item.get_icon()
+		held_count.text = str(held_quantity) if held_quantity > 1 else ""
 	else:
-		held_preview.visible = false
-		if held_icon:
-			held_icon.texture = null
-		if held_count:
-			held_count.text = ""
-
-func _refresh_ui() -> void:
-	if player_inventory:
-		_refresh_grid(player_inventory)
-	if chest_inventory:
-		_refresh_grid(chest_inventory)
-
-func _refresh_grid(inv: InventoryData) -> void:
-	var panels: Array[PanelContainer] = _slot_panels.get(inv, [])
-	for i in panels.size():
-		if i >= inv.slots.size():
-			break
-		var slot_panel := panels[i]
-		var slot := inv.slots[i]
-		var icon: TextureRect = slot_panel.find_child("Icon", true, false) as TextureRect
-		var count_label: Label = slot_panel.find_child("Count", true, false) as Label
-
-		var is_hover := (hovered_inv == inv and hovered_index == i)
-		_update_slot_style(inv, i, slot_panel, is_hover)
-
-		if slot.is_empty():
-			slot_panel.tooltip_text = ""
-			if icon:
-				icon.texture = null
-			if count_label:
-				count_label.text = ""
-		else:
-			var tip := "%s\n%s" % [slot.item.item_name, slot.item.description]
-			if slot.item.type == "consumable" and chest_inventory == null:
-				tip += "\n[RMB: Use]"
-			slot_panel.tooltip_text = tip
-
-			if icon:
-				icon.texture = slot.item.get_icon()
-			if count_label:
-				count_label.text = str(slot.quantity) if slot.quantity > 1 else ""
+		held_icon.texture = null
+		held_count.text = ""

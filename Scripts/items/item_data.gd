@@ -11,6 +11,7 @@ extends Resource
 @export var stackable: bool = false
 @export var max_stack: int = 1
 @export var icon_path: String = ""
+@export var weapon_definition: WeaponData
 
 ## Эффекты при использовании (для consumable)
 var use_effects: Dictionary = {}
@@ -35,5 +36,10 @@ static func from_config(item_id: String, data: Dictionary) -> ItemData:
 	item.stackable = data.get("stackable", false)
 	item.max_stack = int(data.get("max_stack", 1))
 	item.icon_path = data.get("icon", "")
+	var weapon_path: String = data.get("weapon_resource", "")
+	if weapon_path != "":
+		item.weapon_definition = load(weapon_path) as WeaponData
+		if item.weapon_definition == null:
+			push_warning("[ItemData] Could not load weapon definition: %s" % weapon_path)
 	item.use_effects = data.get("use_effect", {})
 	return item

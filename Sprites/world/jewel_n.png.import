@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://keq7ldclxrdr"
-path="res://.godot/imported/Idle_Max.png-9c06d89a6d03a898a0df1ee4e86b75b9.ctex"
+uid="uid://cqup775ei33rh"
+path="res://.godot/imported/jewel_n.png-96a45079757018ae29bbacae6104ee6c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Animations/player/Idle_Max.png"
-dest_files=["res://.godot/imported/Idle_Max.png-9c06d89a6d03a898a0df1ee4e86b75b9.ctex"]
+source_file="res://Sprites/world/jewel_n.png"
+dest_files=["res://.godot/imported/jewel_n.png-96a45079757018ae29bbacae6104ee6c.ctex"]
 
 [params]
 

@@ -2,6 +2,22 @@
   "fists": {
 	"combo_reset_time": 1.0,
 	"attack_speed": 1.0,
+	"damage_list": [10, 18, 20, 30],
+	"knockback_list": [100.0, 180.0, 200.0, 300.0],
+	"attack_time_list": [0.4, 0.4, 0.4, 0.4]
+  },
+
+  "heavySword": {
+	"combo_reset_time": 1.0,
+	"attack_speed": 0.8,
+	"damage_list": [30, 18, 25, 40],
+	"knockback_list": [100.0, 150.0, 200.0, 300.0],
+	"attack_time_list": [0.4, 0.4, 0.4, 0.4]
+  },
+
+  "shadowCrossbow": {
+	"combo_reset_time": 1.0,
+	"attack_speed": 1.0,
 	"damage_list": [10, 18, 20, 40],
 	"knockback_list": [100.0, 150.0, 200.0, 400.0],
 	"attack_time_list": [0.4, 0.4, 0.4, 0.4]

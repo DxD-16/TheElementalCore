@@ -1,0 +1,295 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://drbd1v5rt8mog"]
+
+[ext_resource type="Script" uid="uid://0iqs5scjvosq" path="res://Scripts/combat/attack_definition.gd" id="1_f2fyj"]
+[ext_resource type="Texture2D" uid="uid://ctyr7rx8f4p7f" path="res://Animations/player/Maxim'sAnimations/Attack_Max.png" id="2_folaf"]
+[ext_resource type="Script" uid="uid://b08aiss43668u" path="res://Scripts/combat/weapon_data.gd" id="2_o5xog"]
+[ext_resource type="Script" uid="uid://dli1b6gaf72nt" path="res://Scripts/combat/weapon_hitbox_definition.gd" id="3_ty21q"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4p2g2"]
+atlas = ExtResource("2_folaf")
+region = Rect2(0, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_stgtq"]
+atlas = ExtResource("2_folaf")
+region = Rect2(173, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sw53c"]
+atlas = ExtResource("2_folaf")
+region = Rect2(346, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xf5q3"]
+atlas = ExtResource("2_folaf")
+region = Rect2(519, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tlgtb"]
+atlas = ExtResource("2_folaf")
+region = Rect2(692, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eu4q5"]
+atlas = ExtResource("2_folaf")
+region = Rect2(865, 0, 173, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_33yhe"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4p2g2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_stgtq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sw53c")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xf5q3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tlgtb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eu4q5")
+}],
+"loop": 1,
+"name": &"LightSword_atk1",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_jnxi4"]
+
+[sub_resource type="Resource" id="Resource_cp56x"]
+script = ExtResource("3_ty21q")
+shape = SubResource("CapsuleShape2D_jnxi4")
+offset = Vector2(20, 0)
+rotation_degrees = 90.0
+metadata/_custom_type_script = "uid://dli1b6gaf72nt"
+
+[sub_resource type="Resource" id="Resource_jnxi4"]
+script = ExtResource("1_f2fyj")
+attack_name = "Strike1"
+damage = 20
+animation_name = "LightSword_atk1"
+animation_frames = SubResource("SpriteFrames_33yhe")
+hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_cp56x")])
+metadata/_custom_type_script = "uid://0iqs5scjvosq"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_folaf"]
+atlas = ExtResource("2_folaf")
+region = Rect2(865, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ty21q"]
+atlas = ExtResource("2_folaf")
+region = Rect2(1038, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yx4r7"]
+atlas = ExtResource("2_folaf")
+region = Rect2(1211, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rdanh"]
+atlas = ExtResource("2_folaf")
+region = Rect2(1384, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x13s4"]
+atlas = ExtResource("2_folaf")
+region = Rect2(1557, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_auqc0"]
+atlas = ExtResource("2_folaf")
+region = Rect2(1730, 0, 173, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mai8y"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_folaf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ty21q")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yx4r7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rdanh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x13s4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_auqc0")
+}],
+"loop": 1,
+"name": &"LightSword_atk2",
+"speed": 20.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_drdnd"]
+radius = 30.0
+height = 80.0
+
+[sub_resource type="Resource" id="Resource_76v2p"]
+script = ExtResource("3_ty21q")
+shape = SubResource("CapsuleShape2D_drdnd")
+offset = Vector2(20, 0)
+rotation_degrees = 90.0
+metadata/_custom_type_script = "uid://dli1b6gaf72nt"
+
+[sub_resource type="Resource" id="Resource_m1efj"]
+script = ExtResource("1_f2fyj")
+attack_name = "Strike2"
+damage = 15
+knockback = 80.0
+animation_name = "LightSword_atk2"
+animation_frames = SubResource("SpriteFrames_mai8y")
+hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_76v2p")])
+metadata/_custom_type_script = "uid://0iqs5scjvosq"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_un065"]
+atlas = ExtResource("2_folaf")
+region = Rect2(1730, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vn6xl"]
+atlas = ExtResource("2_folaf")
+region = Rect2(1903, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bfd5e"]
+atlas = ExtResource("2_folaf")
+region = Rect2(2076, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a4t3e"]
+atlas = ExtResource("2_folaf")
+region = Rect2(2249, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5c27f"]
+atlas = ExtResource("2_folaf")
+region = Rect2(2422, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rxopf"]
+atlas = ExtResource("2_folaf")
+region = Rect2(2595, 0, 173, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_f8egw"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_un065")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vn6xl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bfd5e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a4t3e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5c27f")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rxopf")
+}],
+"loop": 1,
+"name": &"LightSword_atk3",
+"speed": 20.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_28u5l"]
+radius = 20.0
+height = 40.0
+
+[sub_resource type="Resource" id="Resource_uajwi"]
+script = ExtResource("3_ty21q")
+shape = SubResource("CapsuleShape2D_28u5l")
+offset = Vector2(20, 0)
+rotation_degrees = 90.0
+metadata/_custom_type_script = "uid://dli1b6gaf72nt"
+
+[sub_resource type="Resource" id="Resource_7j84g"]
+script = ExtResource("1_f2fyj")
+attack_name = "Strike3"
+damage = 18
+knockback = 200.0
+animation_name = "LightSword_atk3"
+animation_frames = SubResource("SpriteFrames_f8egw")
+hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_uajwi")])
+metadata/_custom_type_script = "uid://0iqs5scjvosq"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lpxvb"]
+atlas = ExtResource("2_folaf")
+region = Rect2(2595, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g728b"]
+atlas = ExtResource("2_folaf")
+region = Rect2(2768, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3ugs"]
+atlas = ExtResource("2_folaf")
+region = Rect2(2941, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_puwtb"]
+atlas = ExtResource("2_folaf")
+region = Rect2(3114, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iqyv6"]
+atlas = ExtResource("2_folaf")
+region = Rect2(3287, 0, 173, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ougtj"]
+atlas = ExtResource("2_folaf")
+region = Rect2(0, 0, 173, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4l03e"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lpxvb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g728b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b3ugs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_puwtb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_iqyv6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ougtj")
+}],
+"loop": 1,
+"name": &"LightSword_atk4",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_p7o20"]
+radius = 25.0
+height = 50.0
+
+[sub_resource type="Resource" id="Resource_cjixv"]
+script = ExtResource("3_ty21q")
+shape = SubResource("CapsuleShape2D_p7o20")
+offset = Vector2(25, 0)
+rotation_degrees = 90.0
+metadata/_custom_type_script = "uid://dli1b6gaf72nt"
+
+[sub_resource type="Resource" id="Resource_vi55g"]
+script = ExtResource("1_f2fyj")
+attack_name = "Strike4"
+damage = 35
+knockback = 300.0
+animation_name = "LightSword_atk4"
+animation_frames = SubResource("SpriteFrames_4l03e")
+hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_cjixv")])
+metadata/_custom_type_script = "uid://0iqs5scjvosq"
+
+[resource]
+script = ExtResource("2_o5xog")
+id = "light_sword"
+display_name = "Light Sword"
+base_damage = 15
+attacks = Array[ExtResource("1_f2fyj")]([SubResource("Resource_jnxi4"), SubResource("Resource_m1efj"), SubResource("Resource_7j84g"), SubResource("Resource_vi55g")])
+metadata/_custom_type_script = "uid://b08aiss43668u"

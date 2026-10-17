@@ -19,8 +19,16 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	var dummy_weight := 1.0
+	var dummy_resistances: Dictionary = {
+		"physical": 0.0,
+		"fire": 0.0,
+		"electric": 0.0,
+		"ether": 0.0,
+		"ice": 0.0
+	}
 	if ConfigManager:
 		dummy_weight = ConfigManager.get_float("entities", "dummy.weight", dummy_weight)
+		dummy_resistances = ConfigManager.get_dict("entities", "dummy.resistances", dummy_resistances)
 	definition = EnemyDefinitionClass.new("dummy", {
 		"display_name": "Dummy",
 		"max_health": 1000,
@@ -28,6 +36,7 @@ func _ready() -> void:
 		"weight": dummy_weight,
 		"detection_range": 0.0,
 		"attack_range": 0.0,
+		"resistances": dummy_resistances,
 		"drop_table": drop_table
 	})
 	set_definition(definition)
@@ -77,12 +86,13 @@ func _deal_contact_damage(player: Player) -> void:
 	player.take_damage(contact_damage, global_position)
 
 func take_damage(amount: int, hit_pos: Vector2 = Vector2.ZERO, knockback: Vector2 = Vector2.ZERO) -> void:
-	apply_damage(amount, hit_pos, ElementalTypes.ElementType.NONE, null, knockback)
+	apply_damage(amount, hit_pos, DamageTypes.Type.PHYSICAL, null, knockback)
 
 func _on_died() -> void:
+	if is_dead:
+		return
 	print("Dummy destroyed!")
-	_spawn_loot()
-	queue_free()
+	super._on_died()
 
 func _spawn_loot() -> void:
 	if not DROPPED_ITEM_SCENE:

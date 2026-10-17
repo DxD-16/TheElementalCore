@@ -7,6 +7,8 @@ var states: Dictionary = {}
 func register_state(state_name: String, state_node: Node) -> void:
 	if state_node == null:
 		return
+	if state_node.get_parent() == null:
+		add_child(state_node)
 	states[state_name.to_lower()] = state_node
 	if state_node.has_method("set_enemy"):
 		state_node.set_enemy(owner)

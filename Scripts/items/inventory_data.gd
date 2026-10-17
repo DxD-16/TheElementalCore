@@ -6,10 +6,22 @@ extends Node
 
 signal inventory_changed
 signal item_used(item: ItemData)
+signal equipment_changed
 
-const DROPPED_ITEM_SCENE = preload("res://Scenes/items/dropped_item.tscn")
+const DROPPED_ITEM_SCENE_PATH := "res://Scenes/items/dropped_item.tscn"
 
-@export var slot_count: int = 20
+@export var slot_count: int = 48
+@export_group("Equipment")
+@export var primary_weapon: ItemData
+@export var primary_weapon_stone: ItemData
+@export var backup_weapon: ItemData
+@export var backup_weapon_stone: ItemData
+@export var accessories: Array[ItemData] = [null, null, null, null, null, null, null]
+@export var accessory_stones: Array[ItemData] = [null, null]
+@export var consumables: Array[ItemData] = [null, null]
+@export_enum("primary", "backup") var active_weapon_slot: String = "primary"
+
+const ACCESSORY_STONE_SLOT_INDICES: Array[int] = [0, 1]
 
 var slots: Array[InventorySlot] = []
 
@@ -19,6 +31,46 @@ var item_registry: Dictionary = {}
 func _ready() -> void:
 	_init_slots()
 	_load_item_registry()
+	_normalize_equipment_arrays()
+
+func _normalize_equipment_arrays() -> void:
+	while accessories.size() > 7:
+		accessories.pop_back()
+	while accessories.size() < 7:
+		accessories.append(null)
+	while accessory_stones.size() > 2:
+		accessory_stones.pop_back()
+	while accessory_stones.size() < 2:
+		accessory_stones.append(null)
+	while consumables.size() > 2:
+		consumables.pop_back()
+	while consumables.size() < 2:
+		consumables.append(null)
+
+func set_active_weapon_slot(slot_id: String) -> bool:
+	if slot_id != "primary" and slot_id != "backup":
+		push_error("[InventoryData] Unknown active weapon slot: %s" % slot_id)
+		return false
+	if active_weapon_slot == slot_id:
+		return true
+	active_weapon_slot = slot_id
+	equipment_changed.emit()
+	return true
+
+func get_active_weapon_slot() -> String:
+	return active_weapon_slot
+
+func use_equipped_consumable(index: int) -> bool:
+	if index < 0 or index >= consumables.size():
+		return false
+	var item := consumables[index]
+	if item == null or item.type != "consumable":
+		return false
+	_apply_item_effect(item)
+	consumables[index] = null
+	item_used.emit(item)
+	equipment_changed.emit()
+	return true
 
 func _init_slots() -> void:
 	slots.clear()
@@ -27,9 +79,13 @@ func _init_slots() -> void:
 
 func _load_item_registry() -> void:
 	item_registry.clear()
-	if not ConfigManager:
+	var config_manager := get_node_or_null("/root/ConfigManager")
+	if config_manager == null:
 		return
-	var items_dict: Dictionary = ConfigManager.get_value("items", "", {})
+	var items_dict: Variant = config_manager.call("get_value", "items", "", {})
+	if not items_dict is Dictionary:
+		push_error("[InventoryData] Item configuration must be a dictionary")
+		return
 	for item_id in items_dict:
 		var data: Dictionary = items_dict[item_id]
 		if data is Dictionary:
@@ -38,6 +94,70 @@ func _load_item_registry() -> void:
 
 func get_item_data(item_id: String) -> ItemData:
 	return item_registry.get(item_id, null)
+
+func get_equipment_item(slot_id: String) -> ItemData:
+	match slot_id:
+		"primary_weapon":
+			return primary_weapon
+		"primary_weapon_stone":
+			return primary_weapon_stone
+		"backup_weapon":
+			return backup_weapon
+		"backup_weapon_stone":
+			return backup_weapon_stone
+		"accessory_0", "accessory_1", "accessory_2", "accessory_3", "accessory_4", "accessory_5", "accessory_6":
+			return accessories[int(slot_id.trim_prefix("accessory_"))]
+		"accessory_stone_0", "accessory_stone_1":
+			return accessory_stones[int(slot_id.trim_prefix("accessory_stone_"))]
+		"consumable_0", "consumable_1":
+			return consumables[int(slot_id.trim_prefix("consumable_"))]
+		_:
+			push_error("[InventoryData] Unknown equipment slot: %s" % slot_id)
+			return null
+
+func set_equipment_item(slot_id: String, item: ItemData) -> bool:
+	if item != null and not _is_item_valid_for_equipment_slot(slot_id, item):
+		return false
+	match slot_id:
+		"primary_weapon":
+			primary_weapon = item
+		"primary_weapon_stone":
+			primary_weapon_stone = item
+		"backup_weapon":
+			backup_weapon = item
+		"backup_weapon_stone":
+			backup_weapon_stone = item
+		"accessory_0", "accessory_1", "accessory_2", "accessory_3", "accessory_4", "accessory_5", "accessory_6":
+			accessories[int(slot_id.trim_prefix("accessory_"))] = item
+		"accessory_stone_0", "accessory_stone_1":
+			accessory_stones[int(slot_id.trim_prefix("accessory_stone_"))] = item
+		"consumable_0", "consumable_1":
+			consumables[int(slot_id.trim_prefix("consumable_"))] = item
+		_:
+			push_error("[InventoryData] Unknown equipment slot: %s" % slot_id)
+			return false
+	equipment_changed.emit()
+	return true
+
+func _is_item_valid_for_equipment_slot(slot_id: String, item: ItemData) -> bool:
+	match slot_id:
+		"primary_weapon", "backup_weapon":
+			if item.type == "weapon" and item.weapon_definition != null and not item.stackable:
+				return true
+		"primary_weapon_stone", "backup_weapon_stone", "accessory_stone_0", "accessory_stone_1":
+			if item.type == "stone" and not item.stackable:
+				return true
+		"accessory_0", "accessory_1", "accessory_2", "accessory_3", "accessory_4", "accessory_5", "accessory_6":
+			if item.type == "accessory" and not item.stackable:
+				return true
+		"consumable_0", "consumable_1":
+			if item.type == "consumable":
+				return true
+		_:
+			push_error("[InventoryData] Unknown equipment slot: %s" % slot_id)
+			return false
+	push_warning("[InventoryData] Item '%s' cannot be placed in equipment slot '%s'" % [item.id, slot_id])
+	return false
 
 func add_item_by_id(item_id: String, amount: int = 1) -> int:
 	## Adds item by ID. Returns leftover amount that did not fit.
@@ -216,7 +336,11 @@ func drop_item(slot_index: int, amount: int = -1, drop_pos: Vector2 = Vector2.ZE
 	return true
 
 func spawn_world_drop(item: ItemData, amount: int, drop_pos: Vector2 = Vector2.ZERO) -> void:
-	if not DROPPED_ITEM_SCENE or item == null or amount <= 0:
+	if item == null or amount <= 0:
+		return
+	var dropped_scene := load(DROPPED_ITEM_SCENE_PATH) as PackedScene
+	if dropped_scene == null:
+		push_error("[InventoryData] Could not load dropped item scene")
 		return
 	var scene := get_tree().current_scene
 	if scene == null:
@@ -229,11 +353,11 @@ func spawn_world_drop(item: ItemData, amount: int, drop_pos: Vector2 = Vector2.Z
 		else:
 			drop_pos = Vector2(100, 260)
 
-	var dropped := DROPPED_ITEM_SCENE.instantiate() as DroppedItem
+	var dropped := dropped_scene.instantiate()
 	scene.add_child(dropped)
 	dropped.global_position = drop_pos
 	var launch := Vector2(randf_range(-90.0, 90.0), randf_range(-240.0, -160.0))
-	dropped.setup(item.id, amount, launch)
+	dropped.call("setup", item.id, amount, launch)
 	print("[InventoryData] Dropped item: %s x%d" % [item.item_name, amount])
 
 func use_item(slot_index: int) -> bool:
@@ -257,9 +381,9 @@ func use_item(slot_index: int) -> bool:
 func _apply_item_effect(item: ItemData) -> void:
 	if item.use_effects.has("heal"):
 		var heal_amount := int(item.use_effects["heal"])
-		var player := get_tree().get_first_node_in_group("Player") as Player
+		var player := get_tree().get_first_node_in_group("Player")
 		if player:
-			var hc := player.get_node_or_null("HealthComponent") as HealthComponent
+			var hc := player.get_node_or_null("HealthComponent")
 			if hc:
-				hc.heal(heal_amount)
+				hc.call("heal", heal_amount)
 				print("[InventoryData] Used '%s': +%d HP" % [item.item_name, heal_amount])

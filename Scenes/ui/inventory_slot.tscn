@@ -1,0 +1,8 @@
+[gd_scene format=4 uid="uid://dc4bots0vg0b0"]
+
+[node name="InventorySlot" type="Button" unique_id=231035076]
+custom_minimum_size = Vector2(70, 70)
+size_flags_horizontal = 0
+size_flags_vertical = 0
+focus_mode = 0
+clip_text = true

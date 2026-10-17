@@ -48,4 +48,4 @@ horizontal_alignment = 1
 
 [node name="InventoryData" type="Node" parent="." unique_id=189219634]
 script = ExtResource("4_inv_data")
-slot_count = 15
+slot_count = 18

@@ -9,18 +9,11 @@ var attack_timer: float = 0.0
 
 func _init(p_weapon_data: WeaponData = null) -> void:
 	weapon_data = p_weapon_data
-	if weapon_data == null:
-		weapon_data = WeaponData.new("fists", "Fists")
-		weapon_data.combo_steps = [
-			{"name": "Swing 1", "damage": 10, "knockback": 100.0, "time": 0.3, "element": ElementalTypes.ElementType.NONE, "status": []},
-			{"name": "Swing 2", "damage": 18, "knockback": 150.0, "time": 0.3, "element": ElementalTypes.ElementType.NONE, "status": []},
-			{"name": "Swing 3", "damage": 20, "knockback": 200.0, "time": 0.3, "element": ElementalTypes.ElementType.NONE, "status": []}
-		]
 
-func get_attack_step() -> Dictionary:
+func get_attack_step() -> AttackDefinition:
 	if weapon_data == null:
-		return {}
-	return weapon_data.get_combo_step(combo_index)
+		return null
+	return weapon_data.get_attack_step(combo_index)
 
 func advance_combo() -> void:
 	combo_index += 1
