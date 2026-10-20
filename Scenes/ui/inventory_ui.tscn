@@ -61,8 +61,8 @@ horizontal_alignment = 1
 
 [node name="CategoryButtons" type="GridContainer" parent="Center/Panels/CategoriesPanel/Margin/Content" unique_id=408425669]
 layout_mode = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
 columns = 2
 
 [node name="AllItems" type="Button" parent="Center/Panels/CategoriesPanel/Margin/Content/CategoryButtons" unique_id=535221310]
@@ -129,10 +129,10 @@ size_flags_vertical = 3
 [node name="Margin" type="MarginContainer" parent="Center/Panels/CategoriesPanel/Margin/Content/DetailsPanel" unique_id=1756643593]
 layout_mode = 2
 offset_transform_enabled = true
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="Content" type="VBoxContainer" parent="Center/Panels/CategoriesPanel/Margin/Content/DetailsPanel/Margin" unique_id=1303471212]
 layout_mode = 2
@@ -451,14 +451,14 @@ theme_override_constants/separation = 6
 custom_minimum_size = Vector2(126, 62)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Primary Weapon"
+text = "Prim Wpn"
 clip_text = true
 
 [node name="Equipment_primary_weapon_stone" type="Button" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/PrimaryWeaponRow" unique_id=2056283545]
 custom_minimum_size = Vector2(70, 62)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Weapon Stone"
+text = "Wpn Stn"
 clip_text = true
 
 [node name="BackupWeaponRow" type="HBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=1983362332]
@@ -469,14 +469,14 @@ theme_override_constants/separation = 6
 custom_minimum_size = Vector2(126, 62)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Backup Weapon"
+text = "Bck Wpn"
 clip_text = true
 
 [node name="Equipment_backup_weapon_stone" type="Button" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/BackupWeaponRow" unique_id=1002036658]
 custom_minimum_size = Vector2(70, 62)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Weapon Stone"
+text = "Wpn Stn"
 clip_text = true
 
 [node name="AccessoriesHeading" type="Label" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=252767941]
@@ -492,14 +492,14 @@ theme_override_constants/separation = 5
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Accessory 1"
+text = "Ac 1"
 clip_text = true
 
 [node name="Equipment_accessory_stone_0" type="Button" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/AccessoryRow0" unique_id=1946687406]
 custom_minimum_size = Vector2(48, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Stone"
+text = "Stn"
 clip_text = true
 
 [node name="AccessoryRow1" type="HBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=1730564135]
@@ -510,14 +510,14 @@ theme_override_constants/separation = 5
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Accessory 2"
+text = "Ac 2"
 clip_text = true
 
 [node name="Equipment_accessory_stone_1" type="Button" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/AccessoryRow1" unique_id=1465287993]
 custom_minimum_size = Vector2(48, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Stone"
+text = "Stn"
 clip_text = true
 
 [node name="AccessoryRow2" type="HBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=1855253568]
@@ -528,7 +528,7 @@ theme_override_constants/separation = 5
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Accessory 3"
+text = "Ac 3"
 clip_text = true
 
 [node name="AccessoryRow3" type="HBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=416702614]
@@ -539,7 +539,7 @@ theme_override_constants/separation = 5
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Accessory 4"
+text = "Ac 4"
 clip_text = true
 
 [node name="AccessoryRow4" type="HBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=1293591499]
@@ -550,7 +550,7 @@ theme_override_constants/separation = 5
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Accessory 5"
+text = "Ac 5"
 clip_text = true
 
 [node name="AccessoryRow5" type="HBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=984659554]
@@ -561,7 +561,7 @@ theme_override_constants/separation = 5
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Accessory 6"
+text = "Ac 6"
 clip_text = true
 
 [node name="AccessoryRow6" type="HBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=895586916]
@@ -572,7 +572,7 @@ theme_override_constants/separation = 5
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Accessory 7"
+text = "Ac 7"
 clip_text = true
 
 [node name="ConsumablesHeading" type="Label" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content" unique_id=775036828]
@@ -588,15 +588,53 @@ theme_override_constants/separation = 8
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Consumable 1"
+text = "Cons 1"
 clip_text = true
+
+[node name="CountLabel" type="Label" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/ConsumablesRow/Equipment_consumable_0" unique_id=327595803]
+layout_mode = 1
+anchors_preset = 12
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -28.0
+offset_top = -19.0
+offset_right = -3.0
+offset_bottom = -2.0
+mouse_filter = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 2
+vertical_alignment = 2
 
 [node name="Equipment_consumable_1" type="Button" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/ConsumablesRow" unique_id=706094470]
 custom_minimum_size = Vector2(82, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Consumable 2"
+text = "Cons 2"
 clip_text = true
+
+[node name="CountLabel" type="Label" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/ConsumablesRow/Equipment_consumable_1" unique_id=1709420156]
+layout_mode = 1
+anchors_preset = 12
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -28.0
+offset_top = -19.0
+offset_right = -3.0
+offset_bottom = -2.0
+mouse_filter = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 2
+vertical_alignment = 2
 
 [node name="AbilitiesPanel" type="PanelContainer" parent="Center/Panels/EquipmentPanel/Margin/Content" unique_id=2125514433]
 layout_mode = 2
@@ -613,9 +651,10 @@ theme_override_constants/margin_bottom = 8
 [node name="Tabs" type="TabContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/AbilitiesPanel/Margin" unique_id=1912526585]
 layout_mode = 2
 size_flags_vertical = 3
-current_tab = 0
+current_tab = 1
 
 [node name="Skills" type="VBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/AbilitiesPanel/Margin/Tabs" unique_id=419514276]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 6
 metadata/_tab_index = 0
@@ -640,7 +679,6 @@ text = "Skill descriptions will appear here."
 autowrap_mode = 2
 
 [node name="Talents" type="VBoxContainer" parent="Center/Panels/EquipmentPanel/Margin/Content/AbilitiesPanel/Margin/Tabs" unique_id=1427079302]
-visible = false
 layout_mode = 2
 theme_override_constants/separation = 6
 metadata/_tab_index = 1
@@ -665,7 +703,6 @@ text = "Talent descriptions will appear here."
 autowrap_mode = 2
 
 [node name="HeldItemPreview" type="Control" parent="." unique_id=64453433]
-visible = false
 z_index = 10
 custom_minimum_size = Vector2(60, 60)
 anchors_preset = 0
@@ -674,12 +711,9 @@ offset_bottom = 60.0
 mouse_filter = 2
 
 [node name="Icon" type="TextureRect" parent="HeldItemPreview" unique_id=498960112]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 0
+offset_right = 70.0
+offset_bottom = 70.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
@@ -689,8 +723,11 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 56.0
+offset_right = 10.0
+offset_bottom = 22.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 2
+theme_override_font_sizes/font_size = 25
+horizontal_alignment = 1
 vertical_alignment = 2

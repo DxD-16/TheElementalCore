@@ -88,6 +88,7 @@ func _ready() -> void:
 	_cache_dash_collision_shape()
 	_load_config()
 	_setup_dash_input()
+	_setup_consumable_input()
 
 	var health := get_node_or_null("HealthComponent") as HealthComponent
 	if health:
@@ -167,6 +168,32 @@ func _setup_dash_input() -> void:
 		var ev := InputEventKey.new()
 		ev.physical_keycode = KEY_SHIFT
 		InputMap.action_add_event("dash", ev)
+
+func _setup_consumable_input() -> void:
+	for entry in [
+		{"action": "use_consumable_1", "key": KEY_1},
+		{"action": "use_consumable_2", "key": KEY_2}
+	]:
+		var action := str(entry["action"])
+		if InputMap.has_action(action):
+			continue
+		InputMap.add_action(action)
+		var event := InputEventKey.new()
+		event.physical_keycode = int(entry["key"])
+		InputMap.action_add_event(action, event)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if is_dead or inventory_data == null:
+		return
+	var inventory_ui := get_tree().get_first_node_in_group("InventoryUI") as Control
+	if inventory_ui != null and inventory_ui.visible:
+		return
+	if event.is_action_pressed("use_consumable_1"):
+		inventory_data.use_equipped_consumable(0)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("use_consumable_2"):
+		inventory_data.use_equipped_consumable(1)
+		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
 	# Тикаем таймер i-frames

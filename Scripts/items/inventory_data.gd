@@ -19,6 +19,7 @@ const DROPPED_ITEM_SCENE_PATH := "res://Scenes/items/dropped_item.tscn"
 @export var accessories: Array[ItemData] = [null, null, null, null, null, null, null]
 @export var accessory_stones: Array[ItemData] = [null, null]
 @export var consumables: Array[ItemData] = [null, null]
+@export var consumable_quantities: Array[int] = [0, 0]
 @export_enum("primary", "backup") var active_weapon_slot: String = "primary"
 
 const ACCESSORY_STONE_SLOT_INDICES: Array[int] = [0, 1]
@@ -46,6 +47,18 @@ func _normalize_equipment_arrays() -> void:
 		consumables.pop_back()
 	while consumables.size() < 2:
 		consumables.append(null)
+	while consumable_quantities.size() > 2:
+		consumable_quantities.pop_back()
+	while consumable_quantities.size() < 2:
+		consumable_quantities.append(0)
+	for i in range(consumables.size()):
+		if consumables[i] == null:
+			consumable_quantities[i] = 0
+		elif consumable_quantities[i] <= 0:
+			consumable_quantities[i] = 1
+		else:
+			var max_quantity := consumables[i].max_stack if consumables[i].stackable else 1
+			consumable_quantities[i] = mini(consumable_quantities[i], max_quantity)
 
 func set_active_weapon_slot(slot_id: String) -> bool:
 	if slot_id != "primary" and slot_id != "backup":
@@ -67,7 +80,10 @@ func use_equipped_consumable(index: int) -> bool:
 	if item == null or item.type != "consumable":
 		return false
 	_apply_item_effect(item)
-	consumables[index] = null
+	consumable_quantities[index] -= 1
+	if consumable_quantities[index] <= 0:
+		consumables[index] = null
+		consumable_quantities[index] = 0
 	item_used.emit(item)
 	equipment_changed.emit()
 	return true
@@ -115,7 +131,12 @@ func get_equipment_item(slot_id: String) -> ItemData:
 			push_error("[InventoryData] Unknown equipment slot: %s" % slot_id)
 			return null
 
-func set_equipment_item(slot_id: String, item: ItemData) -> bool:
+func get_equipment_quantity(slot_id: String) -> int:
+	if slot_id == "consumable_0" or slot_id == "consumable_1":
+		return consumable_quantities[int(slot_id.trim_prefix("consumable_"))]
+	return 1 if get_equipment_item(slot_id) != null else 0
+
+func set_equipment_item(slot_id: String, item: ItemData, quantity: int = 1) -> bool:
 	if item != null and not _is_item_valid_for_equipment_slot(slot_id, item):
 		return false
 	match slot_id:
@@ -132,7 +153,13 @@ func set_equipment_item(slot_id: String, item: ItemData) -> bool:
 		"accessory_stone_0", "accessory_stone_1":
 			accessory_stones[int(slot_id.trim_prefix("accessory_stone_"))] = item
 		"consumable_0", "consumable_1":
-			consumables[int(slot_id.trim_prefix("consumable_"))] = item
+			var index := int(slot_id.trim_prefix("consumable_"))
+			consumables[index] = item
+			if item == null:
+				consumable_quantities[index] = 0
+			else:
+				var max_quantity := item.max_stack if item.stackable else 1
+				consumable_quantities[index] = clampi(quantity, 1, max_quantity)
 		_:
 			push_error("[InventoryData] Unknown equipment slot: %s" % slot_id)
 			return false

@@ -27,6 +27,7 @@ window/stretch/mode="viewport"
 
 [gui]
 
+theme/custom="uid://bstuxungjhun6"
 theme/custom_font="res://Fonts/jersey15-regular.ttf"
 
 [input]

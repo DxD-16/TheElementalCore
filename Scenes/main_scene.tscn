@@ -35,8 +35,8 @@ turbulence_enabled = true
 collision_use_scale = true
 
 [sub_resource type="Gradient" id="Gradient_mai8y"]
-offsets = PackedFloat32Array(0, 0.69655174)
-colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+offsets = PackedFloat32Array(0, 0.5192308, 0.69655174)
+colors = PackedColorArray(1, 1, 1, 1, 0.49844503, 0.49844503, 0.49844503, 1, 0, 0, 0, 1)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_2j2di"]
 gradient = SubResource("Gradient_mai8y")
@@ -78,6 +78,7 @@ process_material = SubResource("ParticleProcessMaterial_0h8bj")
 
 [node name="PointLight2D" type="PointLight2D" parent="World/Effects/Fire" unique_id=723938060]
 scale = Vector2(10, 10)
+color = Color(1, 1, 0.7764706, 1)
 texture = SubResource("GradientTexture2D_2j2di")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="World" unique_id=1390868208]

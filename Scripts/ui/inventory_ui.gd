@@ -272,20 +272,26 @@ func _update_inventory_slot(button: Button, inventory: InventoryData, index: int
 	button.text = ""
 	button.tooltip_text = ""
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	var count_label := button.get_node_or_null("CountLabel") as Label
+	if count_label:
+		count_label.text = ""
+		count_label.visible = false
 	var slot := inventory.slots[index]
 	var show_item := not slot.is_empty()
 	if show_item and inventory == player_inventory and selected_category != "all":
 		show_item = _category_for_item(slot.item) == selected_category
 	if show_item:
 		var item := slot.item
-		button.tooltip_text = "%s\n%s" % [item.item_name, item.description]
+		button.tooltip_text = "%s\n%s x%d" % [item.item_name, item.description, slot.quantity]
 		if item.type == "consumable" and inventory == player_inventory and chest_inventory == null:
 			button.tooltip_text += "\nRight-click to use"
 		var icon := item.get_icon()
 		if icon:
 			button.icon = icon
-		button.text = "%s%s" % [item.item_name, " x%d" % slot.quantity if slot.quantity > 1 else ""]
+		if count_label and slot.quantity > 1:
+			count_label.text = str(slot.quantity)
+			count_label.visible = true
 
 func _on_player_slot_input(event: InputEvent, index: int) -> void:
 	if player_inventory:
@@ -369,6 +375,7 @@ func _handle_right_click(inventory: InventoryData, index: int) -> void:
 func _on_equipment_slot_pressed(slot_id: String) -> void:
 	if player_inventory == null:
 		return
+	var is_consumable_slot := slot_id == "consumable_0" or slot_id == "consumable_1"
 	var preview_item := held_item if held_item else player_inventory.get_equipment_item(slot_id)
 	if preview_item:
 		_pin_item_details(preview_item)
@@ -378,12 +385,18 @@ func _on_equipment_slot_pressed(slot_id: String) -> void:
 		description_text.text = "Empty equipment slot."
 	if held_item == null:
 		var equipped := player_inventory.get_equipment_item(slot_id)
+		var equipped_quantity := player_inventory.get_equipment_quantity(slot_id)
 		if equipped and player_inventory.set_equipment_item(slot_id, null):
 			held_item = equipped
-			held_quantity = 1
+			held_quantity = equipped_quantity
 			held_source_inv = player_inventory
 			held_source_index = -1
 	else:
+		if is_consumable_slot:
+			_handle_consumable_equipment_transfer(slot_id)
+			_update_held_preview()
+			_refresh_ui()
+			return
 		var current_item := player_inventory.get_equipment_item(slot_id)
 		if held_item.stackable and current_item != null:
 			return
@@ -399,6 +412,32 @@ func _on_equipment_slot_pressed(slot_id: String) -> void:
 				held_quantity = 1
 	_update_held_preview()
 	_refresh_ui()
+
+func _handle_consumable_equipment_transfer(slot_id: String) -> void:
+	if held_item == null or held_item.type != "consumable":
+		return
+	var current_item := player_inventory.get_equipment_item(slot_id)
+	var current_quantity := player_inventory.get_equipment_quantity(slot_id)
+	if current_item == null:
+		if player_inventory.set_equipment_item(slot_id, held_item, held_quantity):
+			held_item = null
+			held_quantity = 0
+			_clear_held_source()
+		return
+	if current_item.id == held_item.id and current_item.stackable:
+		var space := maxi(current_item.max_stack - current_quantity, 0)
+		var transferred := mini(space, held_quantity)
+		if transferred <= 0:
+			return
+		player_inventory.set_equipment_item(slot_id, current_item, current_quantity + transferred)
+		held_quantity -= transferred
+		if held_quantity <= 0:
+			held_item = null
+			_clear_held_source()
+		return
+	if player_inventory.set_equipment_item(slot_id, held_item, held_quantity):
+		held_item = current_item
+		held_quantity = current_quantity
 
 func _on_equipment_slot_input(event: InputEvent, slot_id: String) -> void:
 	if not event is InputEventMouseButton:
@@ -417,15 +456,26 @@ func _refresh_equipment_slots() -> void:
 		var button: Button = equipment_slots[slot_id]
 		var item := player_inventory.get_equipment_item(slot_id)
 		var label_text := _equipment_slot_label(slot_id)
+		var count_label := button.get_node_or_null("CountLabel") as Label
 		if item:
 			button.text = item.item_name
 			button.tooltip_text = "%s\n%s" % [item.item_name, item.description]
+			if slot_id == "consumable_0" or slot_id == "consumable_1":
+				var hotkey := "1" if slot_id == "consumable_0" else "2"
+				button.tooltip_text += "\nQuantity: %d\nPress %s to use" % [player_inventory.get_equipment_quantity(slot_id), hotkey]
 			var icon := item.get_icon()
 			button.icon = icon
+			if count_label:
+				var quantity := player_inventory.get_equipment_quantity(slot_id)
+				count_label.text = str(quantity) if quantity > 1 else ""
+				count_label.visible = quantity > 1
 		else:
 			button.text = label_text
 			button.tooltip_text = label_text
 			button.icon = null
+			if count_label:
+				count_label.text = ""
+				count_label.visible = false
 	if player_inventory.has_method("get_active_weapon_slot"):
 		var active := str(player_inventory.call("get_active_weapon_slot"))
 		var active_button := find_child("ActiveWeaponButton", true, false) as Button

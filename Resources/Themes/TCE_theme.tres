@@ -1,0 +1,46 @@
+[gd_resource type="Theme" format=3 uid="uid://bstuxungjhun6"]
+
+[ext_resource type="Texture2D" uid="uid://bi6hnpol1tcd5" path="res://Sprites/ui/Inventory/InventorySlotHover.png" id="1_2igaj"]
+[ext_resource type="Texture2D" uid="uid://bg4xs8ji6cwxn" path="res://Sprites/ui/Inventory/InventorySlot.png" id="2_h65q1"]
+[ext_resource type="Texture2D" uid="uid://ds6rfenkdoirj" path="res://Sprites/ui/Inventory/InventorySlotSelected.png" id="3_y62a3"]
+[ext_resource type="FontFile" uid="uid://dnl8hqx2fv4sq" path="res://Fonts/jersey15-regular.ttf" id="4_2scp5"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_koajc"]
+bg_color = Color(0.8227227, 0.38632038, 0.9065283, 1)
+border_width_left = 30
+border_width_top = 32
+border_width_right = 27
+border_width_bottom = 9
+border_color = Color(0.6691057, 0.008162398, 0.31040424, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_r0iyd"]
+texture = ExtResource("1_2igaj")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
+region_rect = Rect2(0, 0, 36, 36)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_oac4r"]
+texture = ExtResource("2_h65q1")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
+region_rect = Rect2(0, 0, 36, 36)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6snjt"]
+texture = ExtResource("3_y62a3")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
+region_rect = Rect2(0, 0, 36, 36)
+
+[resource]
+default_font = ExtResource("4_2scp5")
+default_font_size = 20
+Button/styles/focus = SubResource("StyleBoxFlat_koajc")
+Button/styles/hover = SubResource("StyleBoxTexture_r0iyd")
+Button/styles/normal = SubResource("StyleBoxTexture_oac4r")
+Button/styles/pressed = SubResource("StyleBoxTexture_6snjt")
