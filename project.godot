@@ -16,7 +16,8 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [autoload]
 
-ConfigManager="*res://Scripts/ConfigManager.gd"
+ConfigManager="*res://Scripts/core/config_manager.gd"
+ItemCatalogService="*res://Scripts/items/item_catalog.gd"
 CombatPresentation="*res://Scripts/combat/combat_presentation.gd"
 
 [display]
@@ -68,6 +69,11 @@ ui_down={
 Normal_Attack={
 "deadzone": 0.2,
 "events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":1,"position":Vector2(140, 20),"global_position":Vector2(149, 68),"factor":1.0,"button_index":1,"canceled":false,"pressed":true,"double_click":false,"script":null)
+]
+}
+Secondary_Attack={
+"deadzone": 0.2,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"device":-1,"button_mask":2,"position":Vector2(140, 20),"global_position":Vector2(149, 68),"factor":1.0,"button_index":2,"canceled":false,"pressed":true,"double_click":false,"script":null)
 ]
 }
 dash={

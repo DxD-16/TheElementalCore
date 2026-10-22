@@ -103,12 +103,18 @@ graph TB
 
 	subgraph "Inventory System"
 		InventorySlot[InventorySlot]
-		ItemData[ItemData]
+		ItemDefinition[ItemDefinition]
+		ItemInstance[ItemInstance]
+		ItemBehavior[ItemBehavior]
+		ItemCatalog[ItemCatalog]
 		DroppedItem[DroppedItem]
 		InventoryUI[InventoryUI]
 
 		InventoryData --> InventorySlot
-		InventoryData --> ItemData
+		InventoryData --> ItemInstance
+		ItemInstance --> ItemDefinition
+		ItemDefinition --> ItemBehavior
+		ItemCatalog --> ItemDefinition
 		InventoryData --> DroppedItem
 		CanvasLayer --> InventoryUI
 		InventoryUI --> InventoryData
@@ -129,18 +135,18 @@ graph TB
 		PlayerConfig[player.json]
 		WeaponsConfig[weapons.json]
 		EntitiesConfig[entities.json]
-		ItemsConfig[items.json]
 		PhysicsConfig[physics.json]
 		UIEffectsConfig[ui_effects.json]
 		ElementalReactionsConfig[elemental_reactions.json]
+		ItemResources[Resources/Items]
 
 		ConfigManager --> PlayerConfig
 		ConfigManager --> WeaponsConfig
 		ConfigManager --> EntitiesConfig
-		ConfigManager --> ItemsConfig
 		ConfigManager --> PhysicsConfig
 		ConfigManager --> UIEffectsConfig
 		ConfigManager --> ElementalReactionsConfig
+		ItemCatalog --> ItemResources
 	end
 
 	subgraph "Elemental Reactions"
@@ -323,20 +329,30 @@ sequenceDiagram
 
 1. **State Machine Pattern**: Player and Enemy both use state machines for behavior
 2. **Component Pattern**: HealthComponent, StatusEffectManager, WeaponController as separate components
-3. **Singleton Pattern**: ConfigManager and CombatPresentation as autoload singletons
+3. **Singleton Pattern**: ConfigManager, ItemCatalogService, and CombatPresentation as autoload singletons
 4. **Data-Driven Design**: JSON configs drive gameplay values
 5. **Observer Pattern**: Signals for inventory changes, equipment changes, deaths
-6. **Factory Pattern**: ItemData.from_config(), WeaponRuntime creation
+6. **Resource-Based Items**: ItemCatalogService scans item definition Resources; optional ItemBehavior Resources define item effects
+7. **Factory Pattern**: WeaponRuntime creation
 
 ## Configuration Files
 
 - `player.json`: Movement stats, health, combat weight, visuals
 - `weapons.json`: Weapon definitions, attack data, hitboxes
 - `entities.json`: Enemy definitions, stats, attack patterns
-- `items.json`: Item registry (weapons, accessories, consumables, stones)
+- `Resources/Items/`: Item definitions grouped by category; item effects are optional behavior Resources
 - `physics.json`: Gravity, max fall speed
 - `ui_effects.json`: Hit flash duration/color
 - `elemental_reactions.json`: Reaction rules, thresholds, effect configurations
+
+## Item Resources
+
+- Item definitions are `.tres` Resources stored in `Resources/Items/<Category>/`.
+- `ItemDefinition` holds shared item data; typed subclasses define weapons, consumables, materials, accessories, stones, and quest items.
+- `ItemCatalogService` scans the category folders at startup and reports empty or duplicate IDs and category-folder mismatches.
+- Inventory slots and equipment hold `ItemInstance` Resources that reference a definition; quantity remains a slot property.
+- `ItemBehavior` is optional. Behavior resources expose their own Inspector fields, so separate potion definitions can reuse the same healing script with different amounts.
+- Durability and crafting are intentionally not part of this system.
 
 ## Physics Layers
 
@@ -347,7 +363,8 @@ sequenceDiagram
 ## Input Actions
 
 - `ui_left`, `ui_right`, `ui_up`, `ui_down`: Movement
-- `Normal_Attack`: Left mouse button (attack)
+- `Normal_Attack`: Left mouse button (primary weapon attack)
+- `Secondary_Attack`: Right mouse button (backup weapon attack)
 - `dash`: Shift key (dash)
 - `toggle_inventory`: Tab or I (inventory)
 - `interact`: E key (interact)

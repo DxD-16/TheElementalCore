@@ -593,7 +593,7 @@ clip_text = true
 
 [node name="CountLabel" type="Label" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/ConsumablesRow/Equipment_consumable_0" unique_id=327595803]
 layout_mode = 1
-anchors_preset = 12
+anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
@@ -602,11 +602,11 @@ offset_left = -28.0
 offset_top = -19.0
 offset_right = -3.0
 offset_bottom = -2.0
-mouse_filter = 2
+grow_horizontal = 2
+grow_vertical = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 14
-text = ""
 horizontal_alignment = 2
 vertical_alignment = 2
 
@@ -619,7 +619,7 @@ clip_text = true
 
 [node name="CountLabel" type="Label" parent="Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll/Content/ConsumablesRow/Equipment_consumable_1" unique_id=1709420156]
 layout_mode = 1
-anchors_preset = 12
+anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
@@ -628,11 +628,11 @@ offset_left = -28.0
 offset_top = -19.0
 offset_right = -3.0
 offset_bottom = -2.0
-mouse_filter = 2
+grow_horizontal = 2
+grow_vertical = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 14
-text = ""
 horizontal_alignment = 2
 vertical_alignment = 2
 

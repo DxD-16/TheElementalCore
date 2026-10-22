@@ -12,6 +12,7 @@ func _ready() -> void:
 	current_health = max_health
 
 func take_damage(damage: int) -> void:
+	damage = maxi(damage, 0)
 	current_health = clampi(current_health - damage, 0, max_health)
 	health_changed.emit(current_health)
 

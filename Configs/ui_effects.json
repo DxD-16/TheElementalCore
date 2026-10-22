@@ -4,7 +4,21 @@
 	"rise_duration": 0.2,
 	"hold_duration": 1.0,
 	"fade_duration": 0.25,
-	"drift_range_x": 25.0
+	"drift_range_x": 25.0,
+	"colors": {
+	  "pure": "#FFFFFF",
+	  "physical": "#FF0000",
+	  "ether": "#A020F0",
+	  "fire": "#FF8C00",
+	  "ice": "#00BFFF",
+	  "electric": "#FFFF00",
+	  "player": "#8B0000"
+	},
+	"reaction_style": {
+	  "outline_color": "#FFFFFF",
+	  "outline_size": 6,
+	  "font_scale": 1.5
+	}
   },
   "combat": {
 	"hit_flash_color": "#ffffff",

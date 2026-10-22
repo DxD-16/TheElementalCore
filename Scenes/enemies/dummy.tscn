@@ -15,6 +15,7 @@ height = 48.0
 
 [node name="Dummy" type="CharacterBody2D" unique_id=454250716]
 collision_layer = 4
+collision_mask = 4
 script = ExtResource("1_s0uyp")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1104906702]

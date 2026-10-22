@@ -2,31 +2,30 @@ class_name InventoryData
 extends Node
 
 ## Инвентарь (для игрока или сундука).
-## Хранит массив слотов и реестр всех предметов из items.json.
+## Хранит предметы и загружает определения из ItemCatalog.
 
 signal inventory_changed
-signal item_used(item: ItemData)
+signal item_used(item: ItemInstance)
 signal equipment_changed
 
 const DROPPED_ITEM_SCENE_PATH := "res://Scenes/items/dropped_item.tscn"
 
 @export var slot_count: int = 48
 @export_group("Equipment")
-@export var primary_weapon: ItemData
-@export var primary_weapon_stone: ItemData
-@export var backup_weapon: ItemData
-@export var backup_weapon_stone: ItemData
-@export var accessories: Array[ItemData] = [null, null, null, null, null, null, null]
-@export var accessory_stones: Array[ItemData] = [null, null]
-@export var consumables: Array[ItemData] = [null, null]
+@export var primary_weapon: ItemInstance
+@export var primary_weapon_stone: ItemInstance
+@export var backup_weapon: ItemInstance
+@export var backup_weapon_stone: ItemInstance
+@export var accessories: Array[ItemInstance] = [null, null, null, null, null, null, null]
+@export var accessory_stones: Array[ItemInstance] = [null, null]
+@export var consumables: Array[ItemInstance] = [null, null]
 @export var consumable_quantities: Array[int] = [0, 0]
-@export_enum("primary", "backup") var active_weapon_slot: String = "primary"
 
 const ACCESSORY_STONE_SLOT_INDICES: Array[int] = [0, 1]
 
 var slots: Array[InventorySlot] = []
 
-## Реестр всех известных предметов (id → ItemData)
+## Реестр всех известных предметов (id → ItemDefinition)
 var item_registry: Dictionary = {}
 
 func _ready() -> void:
@@ -60,26 +59,14 @@ func _normalize_equipment_arrays() -> void:
 			var max_quantity := consumables[i].max_stack if consumables[i].stackable else 1
 			consumable_quantities[i] = mini(consumable_quantities[i], max_quantity)
 
-func set_active_weapon_slot(slot_id: String) -> bool:
-	if slot_id != "primary" and slot_id != "backup":
-		push_error("[InventoryData] Unknown active weapon slot: %s" % slot_id)
-		return false
-	if active_weapon_slot == slot_id:
-		return true
-	active_weapon_slot = slot_id
-	equipment_changed.emit()
-	return true
-
-func get_active_weapon_slot() -> String:
-	return active_weapon_slot
-
 func use_equipped_consumable(index: int) -> bool:
 	if index < 0 or index >= consumables.size():
 		return false
 	var item := consumables[index]
 	if item == null or item.type != "consumable":
 		return false
-	_apply_item_effect(item)
+	if not _apply_item_effect(item):
+		return false
 	consumable_quantities[index] -= 1
 	if consumable_quantities[index] <= 0:
 		consumables[index] = null
@@ -95,23 +82,17 @@ func _init_slots() -> void:
 
 func _load_item_registry() -> void:
 	item_registry.clear()
-	var config_manager := get_node_or_null("/root/ConfigManager")
-	if config_manager == null:
+	var catalog := get_node_or_null("/root/ItemCatalogService") as ItemCatalog
+	if catalog == null:
+		push_error("[InventoryData] ItemCatalogService autoload is unavailable")
 		return
-	var items_dict: Variant = config_manager.call("get_value", "items", "", {})
-	if not items_dict is Dictionary:
-		push_error("[InventoryData] Item configuration must be a dictionary")
-		return
-	for item_id in items_dict:
-		var data: Dictionary = items_dict[item_id]
-		if data is Dictionary:
-			item_registry[item_id] = ItemData.from_config(item_id, data)
+	item_registry = catalog.get_definitions()
 	print("[InventoryData] Loaded items: %d" % item_registry.size())
 
-func get_item_data(item_id: String) -> ItemData:
-	return item_registry.get(item_id, null)
+func get_item_data(item_id: String) -> ItemDefinition:
+	return item_registry.get(item_id) as ItemDefinition
 
-func get_equipment_item(slot_id: String) -> ItemData:
+func get_equipment_item(slot_id: String) -> ItemInstance:
 	match slot_id:
 		"primary_weapon":
 			return primary_weapon
@@ -136,7 +117,7 @@ func get_equipment_quantity(slot_id: String) -> int:
 		return consumable_quantities[int(slot_id.trim_prefix("consumable_"))]
 	return 1 if get_equipment_item(slot_id) != null else 0
 
-func set_equipment_item(slot_id: String, item: ItemData, quantity: int = 1) -> bool:
+func set_equipment_item(slot_id: String, item: ItemInstance, quantity: int = 1) -> bool:
 	if item != null and not _is_item_valid_for_equipment_slot(slot_id, item):
 		return false
 	match slot_id:
@@ -166,10 +147,11 @@ func set_equipment_item(slot_id: String, item: ItemData, quantity: int = 1) -> b
 	equipment_changed.emit()
 	return true
 
-func _is_item_valid_for_equipment_slot(slot_id: String, item: ItemData) -> bool:
+func _is_item_valid_for_equipment_slot(slot_id: String, item: ItemInstance) -> bool:
 	match slot_id:
 		"primary_weapon", "backup_weapon":
-			if item.type == "weapon" and item.weapon_definition != null and not item.stackable:
+			var weapon_definition := item.definition as WeaponItemDefinition
+			if weapon_definition != null and weapon_definition.weapon_definition != null and not item.stackable:
 				return true
 		"primary_weapon_stone", "backup_weapon_stone", "accessory_stone_0", "accessory_stone_1":
 			if item.type == "stone" and not item.stackable:
@@ -188,15 +170,24 @@ func _is_item_valid_for_equipment_slot(slot_id: String, item: ItemData) -> bool:
 
 func add_item_by_id(item_id: String, amount: int = 1) -> int:
 	## Adds item by ID. Returns leftover amount that did not fit.
-	var data := get_item_data(item_id)
-	if data == null:
+	var definition := get_item_data(item_id)
+	if definition == null:
 		push_warning("[InventoryData] Unknown item: %s" % item_id)
 		return amount
-	return add_item(data, amount)
+	return add_item(definition, amount)
 
-func add_item(item: ItemData, amount: int = 1) -> int:
+func add_item(definition: ItemDefinition, amount: int = 1) -> int:
 	## Добавляет предмет. Сначала заполняет существующие стаки, потом пустые слоты.
 	## Возвращает количество, которое не поместилось.
+	if definition == null or amount <= 0:
+		return amount
+	var instance := ItemInstance.new()
+	instance.definition = definition
+	return add_item_instance(instance, amount)
+
+func add_item_instance(item: ItemInstance, amount: int = 1) -> int:
+	if item == null or item.definition == null or amount <= 0:
+		return amount
 	var remaining := amount
 
 	# Сначала заполняем уже существующие стаки
@@ -212,7 +203,7 @@ func add_item(item: ItemData, amount: int = 1) -> int:
 		if remaining <= 0:
 			break
 		if slot.is_empty():
-			remaining = slot.add(item, remaining)
+			remaining = slot.add(item.duplicate_instance(), remaining)
 
 	if remaining < amount:
 		inventory_changed.emit()
@@ -276,13 +267,14 @@ func take_half(slot_index: int) -> Dictionary:
 	if remaining <= 0:
 		slot.clear()
 	else:
+		taken_item = slot.item.duplicate_instance()
 		slot.quantity = remaining
 	inventory_changed.emit()
 	return {"item": taken_item, "quantity": half}
 
-func place_or_merge(slot_index: int, held_item: ItemData, held_qty: int) -> Dictionary:
+func place_or_merge(slot_index: int, held_item: ItemInstance, held_qty: int) -> Dictionary:
 	## Кладёт удерживаемый предмет в слот.
-	## Возвращает остаток для руки: {"item": ItemData/null, "quantity": int}
+	## Возвращает остаток для руки: {"item": ItemInstance/null, "quantity": int}
 	if slot_index < 0 or slot_index >= slots.size() or held_item == null or held_qty <= 0:
 		return {"item": held_item, "quantity": held_qty}
 
@@ -314,13 +306,13 @@ func place_or_merge(slot_index: int, held_item: ItemData, held_qty: int) -> Dict
 	inventory_changed.emit()
 	return {"item": old_item, "quantity": old_qty}
 
-func place_one(slot_index: int, held_item: ItemData) -> bool:
+func place_one(slot_index: int, held_item: ItemInstance) -> bool:
 	## Кладёт ровно 1 предмет из руки в слот. Возвращает true при успехе.
 	if slot_index < 0 or slot_index >= slots.size() or held_item == null:
 		return false
 	var slot := slots[slot_index]
 	if slot.is_empty():
-		slot.set_slot(held_item, 1)
+		slot.set_slot(held_item.duplicate_instance(), 1)
 		inventory_changed.emit()
 		return true
 	elif slot.item.id == held_item.id and slot.item.stackable and slot.quantity < slot.item.max_stack:
@@ -337,7 +329,7 @@ func quick_transfer(slot_index: int, target_inv: InventoryData) -> bool:
 	if slot.is_empty():
 		return false
 
-	var leftover := target_inv.add_item(slot.item, slot.quantity)
+	var leftover := target_inv.add_item_instance(slot.item, slot.quantity)
 	if leftover < slot.quantity:
 		if leftover <= 0:
 			slot.clear()
@@ -362,7 +354,7 @@ func drop_item(slot_index: int, amount: int = -1, drop_pos: Vector2 = Vector2.ZE
 	spawn_world_drop(item, to_drop, drop_pos)
 	return true
 
-func spawn_world_drop(item: ItemData, amount: int, drop_pos: Vector2 = Vector2.ZERO) -> void:
+func spawn_world_drop(item: ItemInstance, amount: int, drop_pos: Vector2 = Vector2.ZERO) -> void:
 	if item == null or amount <= 0:
 		return
 	var dropped_scene := load(DROPPED_ITEM_SCENE_PATH) as PackedScene
@@ -384,7 +376,7 @@ func spawn_world_drop(item: ItemData, amount: int, drop_pos: Vector2 = Vector2.Z
 	scene.add_child(dropped)
 	dropped.global_position = drop_pos
 	var launch := Vector2(randf_range(-90.0, 90.0), randf_range(-240.0, -160.0))
-	dropped.call("setup", item.id, amount, launch)
+	dropped.call("setup_instance", item, amount, launch)
 	print("[InventoryData] Dropped item: %s x%d" % [item.item_name, amount])
 
 func use_item(slot_index: int) -> bool:
@@ -395,22 +387,20 @@ func use_item(slot_index: int) -> bool:
 	if slot.is_empty():
 		return false
 	var item := slot.item
-	if item.type != "consumable":
+	if item.type != "consumable" or not _apply_item_effect(item):
 		return false
 
-	# Apply effect
-	_apply_item_effect(item)
 	slot.remove(1)
 	item_used.emit(item)
 	inventory_changed.emit()
 	return true
 
-func _apply_item_effect(item: ItemData) -> void:
-	if item.use_effects.has("heal"):
-		var heal_amount := int(item.use_effects["heal"])
-		var player := get_tree().get_first_node_in_group("Player")
-		if player:
-			var hc := player.get_node_or_null("HealthComponent")
-			if hc:
-				hc.call("heal", heal_amount)
-				print("[InventoryData] Used '%s': +%d HP" % [item.item_name, heal_amount])
+func _apply_item_effect(item: ItemInstance) -> bool:
+	var user := get_tree().get_first_node_in_group("Player")
+	if user == null:
+		push_warning("[InventoryData] Cannot use '%s': no player is available" % item.item_name)
+		return false
+	if item.definition == null or item.definition.behavior == null:
+		push_warning("[InventoryData] Item '%s' has no use behavior" % item.item_name)
+		return false
+	return item.definition.behavior.use(user, item)

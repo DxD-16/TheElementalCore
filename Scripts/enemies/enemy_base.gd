@@ -29,6 +29,8 @@ var _deep_freeze_shatter_bonus_multiplier: float = 0.0
 var _plasma_discharge_effects: Array[Dictionary] = []
 var _stun_remaining: float = 0.0
 var _ether_detonation_effects: Array[Dictionary] = []
+var _exhaustion_remaining: float = 0.0
+var _exhaustion_healing_percent: float = 0.0
 
 func _ready() -> void:
 	add_to_group("Enemies")
@@ -107,6 +109,7 @@ func _process(delta: float) -> void:
 	_advance_stun(delta)
 	_advance_plasma_discharge_effects(delta)
 	_advance_ether_detonation_effects(delta)
+	_advance_exhaustion(delta)
 	if attack_cooldown > 0.0:
 		attack_cooldown = maxf(0.0, attack_cooldown - delta)
 	if state_machine != null and not is_deep_frozen() and not is_stunned():
@@ -128,7 +131,14 @@ func apply_knockback(force: Vector2) -> void:
 	var enemy_weight := float(definition.weight) if definition != null else 1.0
 	velocity += force / enemy_weight
 
-func apply_damage(amount: int, hit_position: Vector2 = Vector2.ZERO, damage_type: int = DamageTypes.Type.PHYSICAL, source: Node = null, knockback: Vector2 = Vector2.ZERO) -> void:
+func apply_damage(
+	amount: int,
+	hit_position: Vector2 = Vector2.ZERO,
+	damage_type: int = DamageTypes.Type.PHYSICAL,
+	source: Node = null,
+	knockback: Vector2 = Vector2.ZERO,
+	is_reaction_damage: bool = false
+) -> void:
 	if is_dead:
 		return
 	var final_damage: int = EnemyDamageResolverClass.calculate_damage(self, amount, damage_type)
@@ -138,16 +148,33 @@ func apply_damage(amount: int, hit_position: Vector2 = Vector2.ZERO, damage_type
 		if not config.is_empty() and _deep_freeze_accumulated_damage > int(config["shatter_threshold_damage"]):
 			_release_deep_freeze_damage(1.0 + _deep_freeze_shatter_bonus_multiplier, hit_position)
 		return
-	_apply_final_damage(final_damage, hit_position, knockback)
+	_apply_final_damage(final_damage, hit_position, knockback, source, damage_type, is_reaction_damage)
 
-func _apply_final_damage(final_damage: int, hit_position: Vector2, knockback: Vector2 = Vector2.ZERO) -> void:
+func _apply_final_damage(
+	final_damage: int,
+	hit_position: Vector2,
+	knockback: Vector2 = Vector2.ZERO,
+	source: Node = null,
+	damage_type: int = DamageTypes.Type.PHYSICAL,
+	is_reaction_damage: bool = false
+) -> void:
 	if is_dead:
 		return
+	var damage_dealt := maxi(final_damage, 0)
+	if health_component:
+		damage_dealt = mini(damage_dealt, health_component.current_health)
+	_heal_attacker_from_exhaustion(source, damage_dealt)
 	if health_component:
 		health_component.take_damage(final_damage)
 	if knockback.length() > 0.0:
 		apply_knockback(knockback)
-	CombatPresentation.show_hit(self, final_damage, hit_position if hit_position != Vector2.ZERO else global_position)
+	CombatPresentation.show_hit(
+		self,
+		final_damage,
+		hit_position if hit_position != Vector2.ZERO else global_position,
+		damage_type,
+		is_reaction_damage
+	)
 	if health_component and health_component.current_health <= 0:
 		_on_died()
 
@@ -239,7 +266,7 @@ func _advance_plasma_discharge_effects(delta: float) -> void:
 			var tick: Dictionary = ticks[tick_index]
 			var damage := int(round(float(tick["damage"]) * float(effect["strength_scale"])))
 			var damage_type := DamageTypes.Type.PURE if str(tick["type"]) == "pure" else DamageTypes.Type.ELECTRIC
-			apply_damage(damage, global_position, damage_type)
+			apply_damage(damage, global_position, damage_type, null, Vector2.ZERO, true)
 			if not is_dead:
 				_apply_stun(stun_duration)
 			tick_index += 1
@@ -294,7 +321,7 @@ func _apply_ether_detonation_blast(damage: int, radius: float, damage_type: int)
 		var enemy := node as EnemyBase
 		if enemy.is_dead or enemy.global_position.distance_squared_to(blast_position) > radius * radius:
 			continue
-		enemy.apply_damage(damage, enemy.global_position, damage_type, self)
+		enemy.apply_damage(damage, enemy.global_position, damage_type, self, Vector2.ZERO, true)
 
 func _get_deep_freeze_config() -> Dictionary:
 	if not ConfigManager:
@@ -327,7 +354,7 @@ func _release_deep_freeze_damage(multiplier: float, hit_position: Vector2) -> vo
 	_deep_freeze_shatter_bonus_multiplier = 0.0
 	var released_damage := int(round(float(accumulated_damage) * multiplier))
 	if released_damage > 0:
-		_apply_final_damage(released_damage, hit_position)
+		_apply_final_damage(released_damage, hit_position, Vector2.ZERO, null, DamageTypes.Type.PURE, true)
 
 func get_effective_resistance(damage_type: int, base_resistance: float) -> float:
 	var strongest_reduction := 0.0
@@ -359,6 +386,45 @@ func _apply_reaction_effects(reaction: Dictionary, skip_reactions: Array[String]
 				_apply_hemorrhage(int(entry.get("strength", 0)))
 			"deep_freeze":
 				_start_deep_freeze(int(entry.get("strength", 0)))
+			"exhaustion":
+				_start_exhaustion(int(entry.get("strength", 0)))
+
+func _start_exhaustion(strength: int) -> void:
+	var config: Dictionary = ConfigManager.get_dict("elemental_reactions", "effects.exhaustion", {}) if ConfigManager else {}
+	if config.is_empty():
+		push_error("[EnemyBase] Missing exhaustion configuration")
+		return
+	var initial_strength := ConfigManager.get_float("elemental_reactions", "strength.initial", 100.0) if ConfigManager else 100.0
+	if not is_finite(initial_strength) or initial_strength <= 0.0:
+		push_error("[EnemyBase] Reaction strength.initial must be greater than zero")
+		return
+	var strength_scale := clampf(float(strength) / initial_strength, 0.0, 1.0)
+	_exhaustion_remaining = float(config["mark_duration_seconds"])
+	_exhaustion_healing_percent = float(config["healing_percent"]) * strength_scale
+
+func _advance_exhaustion(delta: float) -> void:
+	if not is_finite(delta) or delta <= 0.0:
+		return
+	_exhaustion_remaining = maxf(_exhaustion_remaining - delta, 0.0)
+	if _exhaustion_remaining == 0.0:
+		_exhaustion_healing_percent = 0.0
+
+func _heal_attacker_from_exhaustion(source: Node, damage: int) -> void:
+	if (
+		_exhaustion_remaining <= 0.0
+		or _exhaustion_healing_percent <= 0.0
+		or damage <= 0
+		or source == null
+		or not is_instance_valid(source)
+		or not source.is_in_group("Player")
+	):
+		return
+	var source_health := source.get_node_or_null("HealthComponent") as HealthComponent
+	if source_health == null:
+		return
+	var healing := int(round(float(damage) * _exhaustion_healing_percent / 100.0))
+	if healing > 0:
+		source_health.heal(healing)
 
 func _apply_hemorrhage(strength: int) -> void:
 	var config: Dictionary = ConfigManager.get_dict("elemental_reactions", "effects.hemorrhage", {}) if ConfigManager else {}
@@ -373,7 +439,7 @@ func _apply_hemorrhage(strength: int) -> void:
 	var damage_percent := float(config["pure_damage_max_health_percent"]) * scale
 	var pure_damage := int(round(float(health_component.max_health) * damage_percent / 100.0))
 	if pure_damage > 0:
-		apply_damage(pure_damage, global_position, DamageTypes.Type.PURE)
+		apply_damage(pure_damage, global_position, DamageTypes.Type.PURE, null, Vector2.ZERO, true)
 
 func _start_magnetic_overload(strength: int) -> void:
 	var config: Dictionary = ConfigManager.get_dict("elemental_reactions", "effects.magnetic_overload", {}) if ConfigManager else {}
@@ -449,7 +515,7 @@ func _discharge_magnetic_overload(field: Dictionary) -> void:
 		if knockback_strength > 0.0:
 			var direction := offset.normalized() if offset.length_squared() > 0.0 else Vector2.RIGHT
 			knockback = direction * knockback_strength
-		enemy.apply_damage(damage, enemy.global_position, DamageTypes.Type.ELECTRIC, self, knockback)
+		enemy.apply_damage(damage, enemy.global_position, DamageTypes.Type.ELECTRIC, self, knockback, true)
 
 func _apply_thermo_burst(strength: int) -> void:
 	var config: Dictionary = ConfigManager.get_dict("elemental_reactions", "effects.thermo_burst", {}) if ConfigManager else {}
@@ -481,7 +547,7 @@ func _apply_thermo_burst(strength: int) -> void:
 		var enemy := node as EnemyBase
 		if enemy.is_dead or enemy.global_position.distance_squared_to(burst_position) > aoe_radius * aoe_radius:
 			continue
-		enemy.apply_damage(aoe_damage, enemy.global_position, DamageTypes.Type.FIRE)
+		enemy.apply_damage(aoe_damage, enemy.global_position, DamageTypes.Type.FIRE, null, Vector2.ZERO, true)
 
 func _advance_resistance_reduction_effects(delta: float) -> void:
 	for i in range(_resistance_reduction_effects.size() - 1, -1, -1):

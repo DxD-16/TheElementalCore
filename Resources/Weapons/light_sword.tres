@@ -69,6 +69,8 @@ script = ExtResource("1_f2fyj")
 attack_name = "Strike1"
 animation_name = "LightSword_atk1"
 animation_frames = SubResource("SpriteFrames_33yhe")
+element = 1
+element_charge = 50.0
 hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_cp56x")])
 metadata/_custom_type_script = "uid://0iqs5scjvosq"
 
@@ -140,6 +142,8 @@ damage = 20
 knockback = 80.0
 animation_name = "LightSword_atk2"
 animation_frames = SubResource("SpriteFrames_mai8y")
+element = 1
+element_charge = 50.0
 hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_76v2p")])
 metadata/_custom_type_script = "uid://0iqs5scjvosq"
 
@@ -211,6 +215,7 @@ damage = 30
 knockback = 200.0
 animation_name = "LightSword_atk3"
 animation_frames = SubResource("SpriteFrames_f8egw")
+element_charge = 30.0
 hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_uajwi")])
 metadata/_custom_type_script = "uid://0iqs5scjvosq"
 
@@ -282,6 +287,8 @@ damage = 40
 knockback = 300.0
 animation_name = "LightSword_atk4"
 animation_frames = SubResource("SpriteFrames_4l03e")
+element = 1
+element_charge = 30.0
 hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_cjixv")])
 metadata/_custom_type_script = "uid://0iqs5scjvosq"
 
@@ -289,6 +296,5 @@ metadata/_custom_type_script = "uid://0iqs5scjvosq"
 script = ExtResource("2_o5xog")
 id = "light_sword"
 display_name = "Light Sword"
-base_damage = 15
 attacks = Array[ExtResource("1_f2fyj")]([SubResource("Resource_jnxi4"), SubResource("Resource_m1efj"), SubResource("Resource_7j84g"), SubResource("Resource_vi55g")])
 metadata/_custom_type_script = "uid://b08aiss43668u"

@@ -21,7 +21,13 @@ func _ready() -> void:
 		if configured_color.is_valid_html_color():
 			hit_flash_color = Color(configured_color)
 
-func show_hit(target: Node, amount: int, hit_position: Vector2, number_color: Color = Color(-1, -1, -1)) -> void:
+func show_hit(
+	target: Node,
+	amount: int,
+	hit_position: Vector2,
+	damage_type: int = DamageTypes.Type.PHYSICAL,
+	is_reaction_damage: bool = false
+) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 
@@ -34,7 +40,13 @@ func show_hit(target: Node, amount: int, hit_position: Vector2, number_color: Co
 		return
 	var damage_number := DAMAGE_NUMBER_SCENE.instantiate()
 	scene.add_child(damage_number)
-	damage_number.start(amount, hit_position, number_color)
+	damage_number.start(
+		amount,
+		hit_position,
+		damage_type,
+		target.is_in_group("Player"),
+		is_reaction_damage
+	)
 
 func _play_hit_flash(target: Node) -> void:
 	var visual := _find_visual(target)

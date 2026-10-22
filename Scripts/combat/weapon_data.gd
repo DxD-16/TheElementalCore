@@ -5,7 +5,6 @@ extends Resource
 @export var display_name: String = ""
 @export var weapon_type: String = "melee"
 @export var element: int = ElementalTypes.ElementType.NONE
-@export var base_damage: int = 10
 @export var base_knockback: float = 100.0
 @export var base_attack_speed: float = 1.0
 @export var combo_reset_time: float = 1.0

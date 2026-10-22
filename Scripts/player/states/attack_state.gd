@@ -3,9 +3,19 @@ extends State
 
 var weapon_controller: WeaponController
 var original_sprite_frames: SpriteFrames
+var attack_input_action: StringName = &"Normal_Attack"
 
 func enter() -> void:
 	if not player:
+		return
+
+	if Input.is_action_just_pressed("Secondary_Attack") \
+	and not Input.is_action_just_pressed("Normal_Attack"):
+		attack_input_action = &"Secondary_Attack"
+	else:
+		attack_input_action = &"Normal_Attack"
+	if not player.equip_weapon_for_slot("backup" if attack_input_action == &"Secondary_Attack" else "primary"):
+		call_deferred("_return_to_movement_state")
 		return
 
 	original_sprite_frames = player.animated_sprite.sprite_frames if player.animated_sprite else null
@@ -96,7 +106,7 @@ func exit() -> void:
 			weapon_controller.attack_step_started.disconnect(_on_attack_step_started)
 
 func update(_delta: float) -> void:
-	if Input.is_action_just_pressed("Normal_Attack") and weapon_controller:
+	if Input.is_action_just_pressed(attack_input_action) and weapon_controller:
 		weapon_controller.buffer_next_attack()
 
 func physics_update(_delta: float) -> void:

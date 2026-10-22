@@ -21,7 +21,7 @@
 	"1_2": "plasma_discharge",
 	"1_3": "ether_detonation",
 	"1_4": "steam_veil",
-	"2_3": "ether_shock",
+	"2_3": "exhaustion",
 	"2_4": "isolation",
 	"3_4": "weakness"
   },
@@ -80,6 +80,10 @@
 	  "discharge_radius_px": 100.0,
 	  "discharge_electric_damage": 100,
 	  "discharge_knockback": 1000.0
+	},
+	"exhaustion": {
+	  "mark_duration_seconds": 5.0,
+	  "healing_percent": 10.0
 	}
   }
 }

@@ -103,7 +103,7 @@ func _check_multiple_primed_elements_react_together() -> int:
 	if reactions.size() != 2:
 		print("FAIL: each primed element should react with the trigger")
 		return 1
-	if reactions[0].get("reaction") != "plasma_discharge" or reactions[1].get("reaction") != "ether_shock":
+	if reactions[0].get("reaction") != "plasma_discharge" or reactions[1].get("reaction") != "exhaustion":
 		print("FAIL: simultaneous reactions should use configured reaction mappings")
 		return 1
 	if not gauge.get_primed_elements().is_empty():

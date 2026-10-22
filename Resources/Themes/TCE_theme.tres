@@ -37,6 +37,15 @@ texture_margin_right = 8.0
 texture_margin_bottom = 8.0
 region_rect = Rect2(0, 0, 36, 36)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5m8n6"]
+bg_color = Color(0.95742506, 0.36454996, 0.50197726, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7j84g"]
+bg_color = Color(0.3843165, 0.6835675, 0.3723186, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hq00k"]
+bg_color = Color(0.70023316, 0.45348197, 0.99109584, 1)
+
 [resource]
 default_font = ExtResource("4_2scp5")
 default_font_size = 20
@@ -44,3 +53,6 @@ Button/styles/focus = SubResource("StyleBoxFlat_koajc")
 Button/styles/hover = SubResource("StyleBoxTexture_r0iyd")
 Button/styles/normal = SubResource("StyleBoxTexture_oac4r")
 Button/styles/pressed = SubResource("StyleBoxTexture_6snjt")
+VScrollBar/styles/grabber = SubResource("StyleBoxFlat_5m8n6")
+VScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_7j84g")
+VScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_hq00k")

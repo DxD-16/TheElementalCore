@@ -17,6 +17,8 @@ func _run_checks() -> void:
 	var inventory_data := InventoryData.new()
 	inventory_data.name = "InventoryData"
 	player.add_child(inventory_data)
+	var health_component := HealthComponent.new()
+	player.add_child(health_component)
 	host.add_child(player)
 	var canvas_layer := CanvasLayer.new()
 	host.add_child(canvas_layer)
@@ -91,49 +93,86 @@ func _run_checks() -> void:
 		await _finish_test(host, 1)
 		return
 
+	var catalog := root.get_node_or_null("ItemCatalogService") as ItemCatalog
+	var health_potion := catalog.get_definition("health_potion") if catalog else null
+	var big_health_potion := catalog.get_definition("big_health_potion") if catalog else null
+	if health_potion == null or big_health_potion == null \
+	or not health_potion.behavior is HealItemBehavior \
+	or not big_health_potion.behavior is HealItemBehavior \
+	or health_potion.behavior == big_health_potion.behavior \
+	or (health_potion.behavior as HealItemBehavior).heal_amount != 50 \
+	or (big_health_potion.behavior as HealItemBehavior).heal_amount != 100:
+		print("FAIL: scanned item resources should keep separate per-item behavior values")
+		await _finish_test(host, 1)
+		return
+	health_component.current_health = 0
+	var potion_instance := ItemInstance.new()
+	potion_instance.definition = health_potion
+	if not health_potion.behavior.use(player, potion_instance) or health_component.current_health != 50:
+		print("FAIL: loaded healing behavior should apply its resource-configured amount")
+		await _finish_test(host, 1)
+		return
+	var catalog_inventory := InventoryData.new()
+	catalog_inventory.slot_count = 2
+	host.add_child(catalog_inventory)
+	await process_frame
+	if catalog_inventory.add_item_by_id("health_potion", 12) != 0 \
+	or catalog_inventory.slots[0].quantity != 10 \
+	or catalog_inventory.slots[1].quantity != 2:
+		print("FAIL: inventory should resolve scanned definitions and preserve stack limits")
+		await _finish_test(host, 1)
+		return
+
 	var inventory := inventory_data
-	var weapon := ItemData.new()
-	weapon.id = "test_weapon"
-	weapon.item_name = "Test Weapon"
-	weapon.type = "weapon"
-	weapon.weapon_definition = (load("res://Resources/Weapons/fists.tres") as WeaponData).duplicate() as WeaponData
-	weapon.weapon_definition.id = "test_equipped_weapon"
-	var backup_weapon := ItemData.new()
-	backup_weapon.id = "backup_weapon"
-	backup_weapon.item_name = "Backup Weapon"
-	backup_weapon.type = "weapon"
-	backup_weapon.weapon_definition = weapon.weapon_definition.duplicate() as WeaponData
-	backup_weapon.weapon_definition.id = "test_backup_weapon"
-	var stone := ItemData.new()
-	stone.id = "test_stone"
-	stone.item_name = "Test Stone"
-	stone.type = "stone"
-	var accessory := ItemData.new()
-	accessory.id = "test_accessory"
-	accessory.item_name = "Test Accessory"
-	accessory.type = "accessory"
+	var weapon_definition := WeaponItemDefinition.new()
+	weapon_definition.id = "test_weapon"
+	weapon_definition.item_name = "Test Weapon"
+	weapon_definition.weapon_definition = (load("res://Resources/Weapons/light_sword.tres") as WeaponData).duplicate() as WeaponData
+	weapon_definition.weapon_definition.id = "test_equipped_weapon"
+	var weapon := ItemInstance.new()
+	weapon.definition = weapon_definition
+	var backup_definition := WeaponItemDefinition.new()
+	backup_definition.id = "backup_weapon"
+	backup_definition.item_name = "Backup Weapon"
+	backup_definition.weapon_definition = weapon_definition.weapon_definition.duplicate() as WeaponData
+	backup_definition.weapon_definition.id = "test_backup_weapon"
+	var backup_weapon := ItemInstance.new()
+	backup_weapon.definition = backup_definition
+	var stone_definition := StoneItemDefinition.new()
+	stone_definition.id = "test_stone"
+	stone_definition.item_name = "Test Stone"
+	var stone := ItemInstance.new()
+	stone.definition = stone_definition
+	var accessory_stone := ItemInstance.new()
+	accessory_stone.definition = stone_definition
+	var accessory_definition := AccessoryItemDefinition.new()
+	accessory_definition.id = "test_accessory"
+	accessory_definition.item_name = "Test Accessory"
+	var accessory := ItemInstance.new()
+	accessory.definition = accessory_definition
 	if not inventory.set_equipment_item("primary_weapon", weapon) \
 	or not inventory.set_equipment_item("backup_weapon", backup_weapon) \
 	or not inventory.set_equipment_item("primary_weapon_stone", stone) \
 	or not inventory.set_equipment_item("accessory_0", accessory) \
-	or not inventory.set_equipment_item("accessory_stone_0", stone):
+	or not inventory.set_equipment_item("accessory_stone_0", accessory_stone):
 		print("FAIL: valid gear and stone items should fit their matching equipment slots")
 		await _finish_test(host, 1)
 		return
-	if not inventory.set_active_weapon_slot("backup") or inventory.active_weapon_slot != "backup":
-		print("FAIL: the active weapon slot should be switchable")
-		await _finish_test(host, 1)
-		return
-	if inventory.backup_weapon.weapon_definition.id != "test_backup_weapon":
+	var equipped_backup_definition := inventory.backup_weapon.definition as WeaponItemDefinition
+	if equipped_backup_definition == null or equipped_backup_definition.weapon_definition.id != "test_backup_weapon":
 		print("FAIL: the backup weapon equipment slot should keep its weapon definition")
 		await _finish_test(host, 1)
 		return
 
-	inventory.slots[0].set_slot(weapon, 1)
+	var inventory_weapon := ItemInstance.new()
+	inventory_weapon.definition = weapon_definition.duplicate() as WeaponItemDefinition
+	inventory.slots[0].set_slot(inventory_weapon, 1)
 	inventory.slots[1].set_slot(stone, 1)
-	var replacement_weapon := weapon.duplicate() as ItemData
-	replacement_weapon.id = "replacement_weapon"
-	replacement_weapon.item_name = "Replacement Weapon"
+	var replacement_definition := weapon_definition.duplicate() as WeaponItemDefinition
+	replacement_definition.id = "replacement_weapon"
+	replacement_definition.item_name = "Replacement Weapon"
+	var replacement_weapon := ItemInstance.new()
+	replacement_weapon.definition = replacement_definition
 	inventory.slots[2].set_slot(replacement_weapon, 1)
 	inventory.inventory_changed.emit()
 	ui._handle_left_click(inventory, 2)
@@ -184,20 +223,25 @@ func _run_checks() -> void:
 		await _finish_test(host, 1)
 		return
 
-	var consumable := ItemData.new()
-	consumable.id = "test_consumable"
-	consumable.item_name = "Test Consumable"
-	consumable.type = "consumable"
+	var consumable_definition := ConsumableItemDefinition.new()
+	consumable_definition.id = "test_consumable"
+	consumable_definition.item_name = "Test Consumable"
+	var heal_behavior := HealItemBehavior.new()
+	heal_behavior.heal_amount = 1
+	consumable_definition.behavior = heal_behavior
+	var consumable := ItemInstance.new()
+	consumable.definition = consumable_definition
 	if not inventory.set_equipment_item("consumable_0", consumable):
 		print("FAIL: consumables should fit their quick-use equipment slots")
 		await _finish_test(host, 1)
 		return
+	health_component.current_health = 0
 	var use_event := InputEventMouseButton.new()
 	use_event.button_index = MOUSE_BUTTON_RIGHT
 	use_event.pressed = true
 	ui._on_equipment_slot_input(use_event, "consumable_0")
-	if inventory.get_equipment_item("consumable_0") != null:
-		print("FAIL: right-clicking an equipped consumable should use and clear it")
+	if inventory.get_equipment_item("consumable_0") != null or health_component.current_health != 1:
+		print("FAIL: right-clicking an equipped consumable should apply its behavior and clear it")
 		await _finish_test(host, 1)
 		return
 

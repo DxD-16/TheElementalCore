@@ -4,14 +4,14 @@ extends Control
 var player_inventory: InventoryData
 var chest_inventory: InventoryData
 var current_chest: Node
-var held_item: ItemData
+var held_item: ItemInstance
 var held_quantity: int = 0
 var held_source_inv: InventoryData
 var held_source_index: int = -1
 var hovered_inv: InventoryData
 var hovered_index: int = -1
 var selected_category: String = "all"
-var pinned_item: ItemData
+var pinned_item: ItemInstance
 var _is_open: bool = false
 
 @export var lock_player_controls_when_open: bool = true
@@ -225,10 +225,12 @@ func _select_category(category_id: String) -> void:
 		button.toggle_mode = true
 	_refresh_player_grid()
 
-func _category_for_item(item: ItemData) -> String:
+func _category_for_item(item: ItemInstance) -> String:
 	match item.type:
 		"weapon", "stone", "accessory", "consumable", "material":
 			return item.type
+		"quest":
+			return "story"
 		_:
 			return "story"
 
@@ -476,35 +478,23 @@ func _refresh_equipment_slots() -> void:
 			if count_label:
 				count_label.text = ""
 				count_label.visible = false
-	if player_inventory.has_method("get_active_weapon_slot"):
-		var active := str(player_inventory.call("get_active_weapon_slot"))
-		var active_button := find_child("ActiveWeaponButton", true, false) as Button
-		if active_button:
-			active_button.text = "Use Backup Weapon" if active == "primary" else "Use Primary Weapon"
-
 func _equipment_slot_label(slot_id: String) -> String:
 	match slot_id:
 		"primary_weapon":
-			return "Primary Weapon"
+			return "Prim Wpn"
 		"primary_weapon_stone":
-			return "Weapon Stone"
+			return "Stn"
 		"backup_weapon":
-			return "Backup Weapon"
+			return "Bck Wpn"
 		"backup_weapon_stone":
-			return "Weapon Stone"
+			return "Stn"
 		"accessory_0", "accessory_1", "accessory_2", "accessory_3", "accessory_4", "accessory_5", "accessory_6":
-			return "Accessory %d" % (int(slot_id.trim_prefix("accessory_")) + 1)
+			return "Acc %d" % (int(slot_id.trim_prefix("accessory_")) + 1)
 		"accessory_stone_0", "accessory_stone_1":
-			return "Stone"
+			return "Stn"
 		"consumable_0", "consumable_1":
-			return "Consumable %d" % (int(slot_id.trim_prefix("consumable_")) + 1)
+			return "Cns %d" % (int(slot_id.trim_prefix("consumable_")) + 1)
 	return "Empty Slot"
-
-func _toggle_active_weapon() -> void:
-	if player_inventory:
-		player_inventory.set_active_weapon_slot(
-			"backup" if player_inventory.active_weapon_slot == "primary" else "primary"
-		)
 
 func _on_inventory_slot_hovered(inventory: InventoryData, index: int) -> void:
 	hovered_inv = inventory
@@ -541,14 +531,14 @@ func _pin_slot_details(inventory: InventoryData, index: int) -> void:
 	if index < inventory.slots.size() and not inventory.slots[index].is_empty():
 		_pin_item_details(inventory.slots[index].item)
 
-func _pin_item_details(item: ItemData) -> void:
+func _pin_item_details(item: ItemInstance) -> void:
 	pinned_item = item
 	_show_item_details(item)
 
 func _clear_pinned_details() -> void:
 	pinned_item = null
 
-func _show_item_details(item: ItemData) -> void:
+func _show_item_details(item: ItemInstance) -> void:
 	description_title.text = item.item_name
 	description_text.text = item.description if item.description != "" else "No description available."
 
@@ -590,7 +580,7 @@ func _return_or_drop_held_item() -> void:
 		return
 	var target_inventory := held_source_inv if held_source_inv else player_inventory
 	if target_inventory:
-		var leftover := target_inventory.add_item(held_item, held_quantity)
+		var leftover := target_inventory.add_item_instance(held_item, held_quantity)
 		if leftover > 0:
 			target_inventory.spawn_world_drop(held_item, leftover)
 	elif player_inventory:

@@ -234,6 +234,18 @@ func _get_reaction_config() -> Dictionary:
 		push_error("[ElementalReactionResolver] Magnetic overload values are outside valid ranges")
 		return {}
 
+	var exhaustion: Variant = effects.get("exhaustion")
+	if not exhaustion is Dictionary:
+		push_error("[ElementalReactionResolver] Missing effects.exhaustion in elemental_reactions.json")
+		return {}
+	for key in ["mark_duration_seconds", "healing_percent"]:
+		if not exhaustion.has(key) or not (exhaustion[key] is int or exhaustion[key] is float) or not is_finite(float(exhaustion[key])):
+			push_error("[ElementalReactionResolver] Invalid or missing effects.exhaustion.%s in elemental_reactions.json" % key)
+			return {}
+	if float(exhaustion["mark_duration_seconds"]) <= 0.0 or float(exhaustion["healing_percent"]) < 0.0 or float(exhaustion["healing_percent"]) > 100.0:
+		push_error("[ElementalReactionResolver] Exhaustion values are outside valid ranges")
+		return {}
+
 	return config
 
 func _normalize_reaction_key(first: int, second: int) -> String:

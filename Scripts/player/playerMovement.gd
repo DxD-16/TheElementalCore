@@ -56,9 +56,6 @@ var squash_recovery_duration: float = 0.14
 
 const HIT_STOP_DURATION: float = 0.2
 const ATTACK_RECOIL_RATIO: float = 0.1
-## Цвет цифр урона игрока — оранжевый #de9e41
-const PLAYER_DAMAGE_COLOR := Color(0.871, 0.620, 0.255)
-
 @onready var body: Node2D = $Body
 @onready var animated_sprite: AnimatedSprite2D = $Body/AnimatedSprite2D
 @onready var state_machine: StateMachine = $StateMachine
@@ -82,9 +79,6 @@ func _ready() -> void:
 	add_child(weapon_controller)
 	if not weapon_controller.equip_weapon(starting_weapon):
 		push_error("Player could not equip its starting weapon")
-	if inventory_data and not inventory_data.equipment_changed.is_connected(_on_equipment_changed):
-		inventory_data.equipment_changed.connect(_on_equipment_changed)
-	_sync_equipped_weapon()
 	_cache_dash_collision_shape()
 	_load_config()
 	_setup_dash_input()
@@ -221,7 +215,7 @@ func take_damage(amount: int, hit_pos: Vector2 = Vector2.ZERO, knockback: Vector
 		health.take_damage(amount)
 	# Запустить i-frames
 	_iframe_timer = iframes_after_dmg
-	CombatPresentation.show_hit(self, amount, hit_pos, PLAYER_DAMAGE_COLOR)
+	CombatPresentation.show_hit(self, amount, hit_pos)
 	if amount > 0:
 		_start_hit_stop()
 
@@ -359,20 +353,36 @@ func equip_weapon(weapon: WeaponData) -> bool:
 		return false
 	return weapon_controller.equip_weapon(weapon)
 
-func _on_equipment_changed() -> void:
-	_sync_equipped_weapon()
-
-func _sync_equipped_weapon() -> void:
+func equip_weapon_for_slot(slot_id: String) -> bool:
 	if weapon_controller == null:
-		return
-	var weapon_item: ItemData
+		push_error("Player cannot select a weapon before its WeaponController is ready")
+		return false
+	var weapon_item: ItemInstance
 	if inventory_data:
-		weapon_item = inventory_data.backup_weapon if inventory_data.active_weapon_slot == "backup" else inventory_data.primary_weapon
-	var weapon := weapon_item.weapon_definition if weapon_item else starting_weapon
-	if weapon != null and (
-		weapon_controller.weapon_data == null or weapon_controller.weapon_data.id != weapon.id
-	) and not weapon_controller.equip_weapon(weapon):
+		match slot_id:
+			"primary":
+				weapon_item = inventory_data.primary_weapon
+			"backup":
+				weapon_item = inventory_data.backup_weapon
+			_:
+				push_error("Unknown weapon slot: %s" % slot_id)
+				return false
+	var weapon := starting_weapon
+	if weapon_item:
+		var weapon_item_definition := weapon_item.definition as WeaponItemDefinition
+		if weapon_item_definition == null or weapon_item_definition.weapon_definition == null:
+			push_error("Equipped weapon item has no valid WeaponData definition")
+			return false
+		weapon = weapon_item_definition.weapon_definition
+	if weapon == null:
+		push_error("Player has no valid weapon for slot '%s' and no starting weapon fallback" % slot_id)
+		return false
+	if weapon_controller.weapon_data != null and weapon_controller.weapon_data.id == weapon.id:
+		return true
+	if not weapon_controller.equip_weapon(weapon):
 		push_warning("Player could not switch to the selected equipped weapon")
+		return false
+	return true
 
 func has_status(effect_id: String) -> bool:
 	return status_effect_manager != null and status_effect_manager.has_effect(effect_id)

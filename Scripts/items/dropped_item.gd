@@ -7,6 +7,7 @@ extends Area2D
 @export var item_count: int = 1
 @export var pick_up_timeout = 2
 
+var item_instance: ItemInstance
 var _picked_up: bool = false
 var _velocity: Vector2 = Vector2.ZERO
 var _gravity: float = 650.0
@@ -30,7 +31,25 @@ func _ready() -> void:
 func setup(p_item_id: String, p_count: int = 1, launch_dir: Vector2 = Vector2.ZERO) -> void:
 	item_id = p_item_id
 	item_count = p_count
+	var catalog := get_node_or_null("/root/ItemCatalogService") as ItemCatalog
+	if catalog == null:
+		push_error("[DroppedItem] ItemCatalogService autoload is unavailable")
+		return
+	var definition := catalog.get_definition(item_id)
+	if definition == null:
+		push_warning("[DroppedItem] Unknown item ID: %s" % item_id)
+		return
+	var instance := ItemInstance.new()
+	instance.definition = definition
+	setup_instance(instance, p_count, launch_dir)
 
+func setup_instance(instance: ItemInstance, p_count: int = 1, launch_dir: Vector2 = Vector2.ZERO) -> void:
+	if instance == null or instance.definition == null:
+		push_error("[DroppedItem] Cannot initialize a drop without a valid item instance")
+		return
+	item_instance = instance.duplicate_instance()
+	item_id = item_instance.id
+	item_count = p_count
 	# Находим уровень пола с помощью RayCast вниз
 	var space_state := get_world_2d().direct_space_state
 	var query := PhysicsRayQueryParameters2D.create(global_position, global_position + Vector2(0, 300), 1)
@@ -46,13 +65,8 @@ func setup(p_item_id: String, p_count: int = 1, launch_dir: Vector2 = Vector2.ZE
 	else:
 		_velocity = Vector2(randf_range(-100.0, 100.0), randf_range(-250.0, -150.0))
 
-	# Иконка предмета из конфига
-	if ConfigManager:
-		var icon_path: String = ConfigManager.get_string("items", "%s.icon" % item_id, "")
-		if icon_path != "" and ResourceLoader.exists(icon_path):
-			var tex := load(icon_path) as Texture2D
-			if tex and sprite:
-				sprite.texture = tex
+	if sprite:
+		sprite.texture = item_instance.get_icon()
 
 func _physics_process(delta: float) -> void:
 	if _picked_up:
@@ -87,7 +101,10 @@ func _on_body_entered(body: Node2D) -> void:
 	if inventory == null:
 		return
 
-	var leftover := inventory.add_item_by_id(item_id, item_count)
+	if item_instance == null:
+		push_error("[DroppedItem] Cannot pick up drop without an item instance")
+		return
+	var leftover := inventory.add_item_instance(item_instance, item_count)
 	if leftover < item_count:
 		var picked_amount := item_count - leftover
 		item_count = leftover

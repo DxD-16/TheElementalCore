@@ -59,6 +59,15 @@ tile_map_data = PackedByteArray("AAAtACAAAgAJAAMAAAAtAB8AAgAJAAIAAAAtAB4AAgAJAAI
 [node name="Dummy" parent="World/Actors/Enemies" unique_id=454250716 instance=ExtResource("4_6ev3c")]
 position = Vector2(102, 279)
 
+[node name="Dummy2" parent="World/Actors/Enemies" unique_id=893126157 instance=ExtResource("4_6ev3c")]
+position = Vector2(61, 270)
+
+[node name="Dummy3" parent="World/Actors/Enemies" unique_id=985117853 instance=ExtResource("4_6ev3c")]
+position = Vector2(142, 266)
+
+[node name="Dummy4" parent="World/Actors/Enemies" unique_id=449785850 instance=ExtResource("4_6ev3c")]
+position = Vector2(187, 220)
+
 [node name="Player" parent="World/Actors" unique_id=1660670300 instance=ExtResource("3_iacmt")]
 position = Vector2(0, 270)
 scale = Vector2(1, 1)

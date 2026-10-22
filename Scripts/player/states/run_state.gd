@@ -10,7 +10,7 @@ func physics_update(_delta: float) -> void:
 		state_machine.transition_to("JumpState")
 		return
 
-	if Input.is_action_just_pressed("Normal_Attack"):
+	if Input.is_action_just_pressed("Normal_Attack") or Input.is_action_just_pressed("Secondary_Attack"):
 		state_machine.transition_to("AttackState")
 		return
 

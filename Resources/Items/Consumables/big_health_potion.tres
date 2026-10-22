@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ConsumableItemDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/items/definitions/consumable_item_definition.gd" id="1_definition"]
+[ext_resource type="Script" path="res://Scripts/items/behaviors/heal_item_behavior.gd" id="2_behavior"]
+
+[sub_resource type="Resource" id="HealBehavior"]
+script = ExtResource("2_behavior")
+heal_amount = 100
+
+[resource]
+script = ExtResource("1_definition")
+id = "big_health_potion"
+item_name = "Greater Health Potion"
+description = "Restores 100 HP"
+stackable = true
+max_stack = 5
+icon_path = "res://Sprites/items/bottle_test.png"
+rarity = "uncommon"
+behavior = SubResource("HealBehavior")

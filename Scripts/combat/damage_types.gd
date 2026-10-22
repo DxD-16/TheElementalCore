@@ -38,5 +38,7 @@ static func to_key(damage_type: int) -> String:
 			return "ether"
 		Type.ICE:
 			return "ice"
+		Type.PURE:
+			return "pure"
 		_:
 			return ""
