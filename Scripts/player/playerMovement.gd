@@ -24,6 +24,14 @@ extends CharacterBody2D
 
 @export var attack_move_speed_multiplier: float = 0.85 # Скорость перемещения во время удара
 
+@export_category("Air Dash")
+@export var air_dash_enabled: bool = true
+@export var air_dash_max_charges: int = 3
+@export var remaining_air_dashes: int = 3
+@export var air_dash_duration: float = 0.3
+@export var air_dash_wall_recovery_duration: float = 0.2
+@export var air_dash_speed: float = 850.0
+
 ## Неуязвимость персонажа (включается, например, во время рывка)
 @export var is_invulnerable: bool = false
 
@@ -46,6 +54,9 @@ var is_dead: bool = false
 var controls_locked: bool = false
 var status_effect_manager: StatusEffectManager = StatusEffectManager.new()
 var weapon_controller: WeaponController
+var air_dash_direction: float = 0.0
+var _air_dash_recovery_timer: float = 0.0
+var _air_dash_input_pending: bool = false
 
 var jump_stretch_x: float = 0.94
 var jump_stretch_y: float = 1.08
@@ -73,6 +84,9 @@ func _ready() -> void:
 	if inventory_data == null:
 		inventory_data = get_node_or_null("InventoryData") as InventoryData
 	status_effect_manager = StatusEffectManager.new()
+	status_effect_manager.configure(self)
+	status_effect_manager.status_applied.connect(_on_status_applied)
+	status_effect_manager.status_removed.connect(_on_status_removed)
 	weapon_controller = WeaponController.new()
 	weapon_controller.source = self
 	weapon_controller.name = "WeaponController"
@@ -83,10 +97,20 @@ func _ready() -> void:
 	_load_config()
 	_setup_dash_input()
 	_setup_consumable_input()
+	remaining_air_dashes = air_dash_max_charges
 
 	var health := get_node_or_null("HealthComponent") as HealthComponent
 	if health:
 		health.died.connect(_on_died)
+
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	if key_event.is_action_pressed("dash"):
+		_air_dash_input_pending = true
 
 func _cache_dash_collision_shape() -> void:
 	if not collision_shape or not collision_shape.shape is CapsuleShape2D:
@@ -141,6 +165,27 @@ func _load_config() -> void:
 		air_jumps = ConfigManager.get_int("player", "movement.air_jumps", air_jumps)
 		air_jump_strength = ConfigManager.get_float("player", "movement.air_jump_strength", air_jump_strength)
 		attack_move_speed_multiplier = ConfigManager.get_float("player", "movement.attack_move_speed_multiplier", attack_move_speed_multiplier)
+		air_dash_enabled = ConfigManager.get_bool("player", "states.air_dash.enabled", air_dash_enabled)
+		var configured_air_dash_charges := ConfigManager.get_int("player", "states.air_dash.max_charges", air_dash_max_charges)
+		if configured_air_dash_charges >= 0:
+			air_dash_max_charges = configured_air_dash_charges
+		else:
+			push_warning("player.states.air_dash.max_charges cannot be negative; using %d" % air_dash_max_charges)
+		var configured_air_dash_duration := ConfigManager.get_float("player", "states.air_dash.duration", air_dash_duration)
+		if configured_air_dash_duration > 0.0:
+			air_dash_duration = configured_air_dash_duration
+		else:
+			push_warning("player.states.air_dash.duration must be greater than zero; using %.2f" % air_dash_duration)
+		var configured_air_dash_wall_recovery := ConfigManager.get_float("player", "states.air_dash.wall_recovery_duration", air_dash_wall_recovery_duration)
+		if configured_air_dash_wall_recovery >= 0.0:
+			air_dash_wall_recovery_duration = configured_air_dash_wall_recovery
+		else:
+			push_warning("player.states.air_dash.wall_recovery_duration cannot be negative; using %.2f" % air_dash_wall_recovery_duration)
+		var configured_air_dash_speed := ConfigManager.get_float("player", "states.air_dash.speed", air_dash_speed)
+		if configured_air_dash_speed > 0.0:
+			air_dash_speed = configured_air_dash_speed
+		else:
+			push_warning("player.states.air_dash.speed must be greater than zero; using %.1f" % air_dash_speed)
 		jump_stretch_x = ConfigManager.get_float("player", "visuals.jump_stretch_x", jump_stretch_x)
 		jump_stretch_y = ConfigManager.get_float("player", "visuals.jump_stretch_y", jump_stretch_y)
 		landing_squash_x = ConfigManager.get_float("player", "visuals.landing_squash_x", landing_squash_x)
@@ -162,6 +207,51 @@ func _setup_dash_input() -> void:
 		var ev := InputEventKey.new()
 		ev.physical_keycode = KEY_SHIFT
 		InputMap.action_add_event("dash", ev)
+
+func _try_start_air_dash() -> bool:
+	if not _air_dash_input_pending:
+		return false
+	_air_dash_input_pending = false
+
+	if (
+		not air_dash_enabled
+		or remaining_air_dashes <= 0
+		or is_on_floor()
+		or not Input.is_action_pressed("dash")
+		or not can_perform_action("dash")
+		or state_machine == null
+		or state_machine.current_state is AirDashState
+	):
+		return false
+
+	var dash_state := state_machine.get_node_or_null("AirDashState") as AirDashState
+	if dash_state == null:
+		push_error("Player cannot start an air dash without an AirDashState")
+		return false
+
+	air_dash_direction = -1.0 if body.scale.x < 0.0 else 1.0
+	remaining_air_dashes -= 1
+	jump_buffer_timer = 0.0
+	velocity.x = air_dash_direction * maxf(air_dash_speed, 0.0) * status_effect_manager.get_multiplier("movement_speed")
+	velocity.y = 0.0
+	state_machine.transition_to("AirDashState")
+	return true
+
+func _air_dash_hit_wall() -> bool:
+	if air_dash_direction == 0.0:
+		return false
+	for collision_index in get_slide_collision_count():
+		var collision := get_slide_collision(collision_index)
+		var normal := collision.get_normal()
+		if absf(normal.x) > 0.7 and normal.x * air_dash_direction < 0.0:
+			return true
+	return false
+
+func _end_air_dash_on_wall() -> void:
+	velocity.x = 0.0
+	_air_dash_recovery_timer = maxf(air_dash_wall_recovery_duration, 0.0)
+	if state_machine and state_machine.current_state is AirDashState:
+		state_machine.transition_to("JumpState")
 
 func _setup_consumable_input() -> void:
 	for entry in [
@@ -190,6 +280,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	status_effect_manager.tick(delta)
 	# Тикаем таймер i-frames
 	if _iframe_timer > 0.0:
 		_iframe_timer -= delta
@@ -206,7 +297,9 @@ func _on_died() -> void:
 
 func take_damage(amount: int, hit_pos: Vector2 = Vector2.ZERO, knockback: Vector2 = Vector2.ZERO) -> void:
 	# Неуязвимость во время рывка или i-frames после урона
-	if is_invulnerable or _iframe_timer > 0.0:
+	if is_invulnerable or _iframe_timer > 0.0 or is_dead:
+		return
+	if status_effect_manager.defer_damage_until_thawed(amount):
 		return
 	if knockback.length() > 0.0:
 		velocity += knockback
@@ -266,15 +359,23 @@ func play_squash(scale_x: float, scale_y: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		_air_dash_input_pending = false
+		return
+	if status_effect_manager.is_physics_disabled():
+		_air_dash_input_pending = false
+		velocity = Vector2.ZERO
 		return
 
 	if controls_locked:
+		_air_dash_input_pending = false
 		velocity.x = 0.0
 		if not is_on_floor():
 			velocity.y = minf(velocity.y + gravity * delta, max_fall_speed)
 		move_and_slide()
 		return
 
+	_try_start_air_dash()
+	var is_air_dashing: bool = state_machine and state_machine.current_state is AirDashState
 	var is_attacking: bool = state_machine and state_machine.current_state is AttackState
 	var is_rolling: bool = state_machine and state_machine.current_state is RollState
 	var is_landing_rolling: bool = state_machine and state_machine.current_state is LandingRollState
@@ -283,22 +384,37 @@ func _physics_process(delta: float) -> void:
 		and state_machine.current_state is JumpState
 		and (state_machine.current_state as JumpState).is_landing()
 	)
+	var can_jump := can_perform_action("jump")
+	var can_move := can_perform_action("move")
+	var movement_multiplier := status_effect_manager.get_multiplier("movement_speed")
 
 	# Графика, койот-тайм и заряд воздушных прыжков
 	if is_on_floor():
 		coyote_timer = coyote_time
 		remaining_air_jumps = air_jumps
+		remaining_air_dashes = air_dash_max_charges
+		_air_dash_recovery_timer = 0.0
 	else:
 		velocity.y = minf(velocity.y + gravity * delta, max_fall_speed)
+		if is_air_dashing or _air_dash_recovery_timer > 0.0:
+			velocity.y = 0.0
+			_air_dash_recovery_timer = maxf(0.0, _air_dash_recovery_timer - delta)
 		coyote_timer -= delta
 
+	if is_air_dashing:
+		jump_buffer_timer = 0.0
+		move_and_slide()
+		if _air_dash_hit_wall():
+			_end_air_dash_on_wall()
+		return
+
 	# Буфер прыжка (блокируется во время атаки / кувырка / приземления)
-	if not is_attacking and not is_rolling and not is_landing_rolling and not is_landing and Input.is_action_just_pressed("ui_up"):
+	if can_jump and not is_attacking and not is_rolling and not is_landing_rolling and not is_landing and _air_dash_recovery_timer <= 0.0 and Input.is_action_just_pressed("ui_up"):
 		jump_buffer_timer = jump_buffer_time
 	else:
 		jump_buffer_timer -= delta
 
-	var jump_locked := is_rolling or is_landing_rolling or is_landing
+	var jump_locked := is_rolling or is_landing_rolling or is_landing or _air_dash_recovery_timer > 0.0 or not can_jump
 	if jump_buffer_timer > 0 and not jump_locked:
 		if coyote_timer > 0:
 			velocity.y = jump_velocity
@@ -311,23 +427,29 @@ func _physics_process(delta: float) -> void:
 			jump_buffer_timer = 0.0
 			remaining_air_jumps -= 1
 
-	if Input.is_action_just_released("ui_up") and velocity.y < 0:
+	if _air_dash_recovery_timer <= 0.0 and Input.is_action_just_released("ui_up") and velocity.y < 0:
 		velocity.y *= jump_cut_multiplier
 
 	# Горизонтальное движение
-	if is_rolling:
+	if is_rolling and can_move:
 		var roll := state_machine.current_state as RollState
-		velocity.x = roll.roll_direction * roll.current_roll_speed
-	elif is_landing_rolling:
+		velocity.x = roll.roll_direction * roll.current_roll_speed * movement_multiplier
+	elif is_landing_rolling and can_move:
 		var landing_roll := state_machine.current_state as LandingRollState
-		velocity.x = landing_roll.roll_speed
+		velocity.x = landing_roll.roll_speed * movement_multiplier
 	elif is_landing:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
+	elif not can_move:
+		velocity.x = 0.0
 	else:
 		var direction := Input.get_axis("ui_left", "ui_right")
 		if direction != 0:
 			var target_speed = speed * attack_move_speed_multiplier if is_attacking else speed
-			velocity.x = move_toward(velocity.x, direction * target_speed, acceleration * delta)
+			velocity.x = move_toward(
+				velocity.x,
+				direction * target_speed * movement_multiplier,
+				acceleration * delta
+			)
 			body.scale.x = absf(body.scale.x) * (-1.0 if direction < 0 else 1.0)
 		else:
 			velocity.x = move_toward(velocity.x, 0, friction * delta)
@@ -387,9 +509,69 @@ func equip_weapon_for_slot(slot_id: String) -> bool:
 func has_status(effect_id: String) -> bool:
 	return status_effect_manager != null and status_effect_manager.has_effect(effect_id)
 
+func apply_status(
+	status_id: String,
+	strength: float = 1.0,
+	duration: float = -1.0,
+	source: Node = null,
+	data: Dictionary = {}
+) -> void:
+	status_effect_manager.apply(status_id, strength, duration, source, data)
+
 func is_controls_locked() -> bool:
 	return controls_locked
 
 func can_perform_action(action_name: String) -> bool:
 	var gate := ActionGate.new()
 	return gate.can_perform_action(self, action_name)
+
+func get_status_multiplier(modifier: String) -> float:
+	return status_effect_manager.get_multiplier(modifier)
+
+func _on_status_applied(effect: StatusEffect) -> void:
+	if effect.id in ["freeze", "stun", "immobilize"]:
+		velocity.x = 0.0
+	if (
+		not can_perform_action("attack")
+		and state_machine != null
+		and state_machine.current_state is AttackState
+	):
+		state_machine.transition_to("IdleState" if is_on_floor() else "JumpState")
+	if effect.id == "stun":
+		_play_stun_animation_placeholder()
+	if (
+		not can_perform_action("dash")
+		and state_machine != null
+		and (
+			state_machine.current_state is RollState
+			or state_machine.current_state is LandingRollState
+			or state_machine.current_state is AirDashState
+		)
+	):
+		_air_dash_recovery_timer = 0.0
+		state_machine.transition_to("IdleState" if is_on_floor() else "JumpState")
+
+func _on_status_removed(effect: StatusEffect, reason: String) -> void:
+	if effect.id != "freeze" or reason not in ["expired", "shattered"]:
+		return
+	var damage := int(effect.data.get("damage_accumulated", 0))
+	if reason == "shattered":
+		damage = int(round(
+			float(damage) * (1.0 + float(effect.data.get("shatter_bonus_damage_multiplier", 0.0)))
+		))
+	if damage <= 0:
+		return
+	var health := get_node_or_null("HealthComponent") as HealthComponent
+	if health == null:
+		push_error("[Player] Cannot apply deferred frozen damage without a HealthComponent")
+		return
+	health.take_damage(damage)
+	CombatPresentation.show_hit(self, damage, global_position, DamageTypes.Type.PURE, true)
+
+func _play_stun_animation_placeholder() -> void:
+	if animated_sprite == null or animated_sprite.sprite_frames == null:
+		return
+	for animation_name in ["PlayerStunned", "Stunned"]:
+		if animated_sprite.sprite_frames.has_animation(animation_name):
+			animated_sprite.play(animation_name)
+			return

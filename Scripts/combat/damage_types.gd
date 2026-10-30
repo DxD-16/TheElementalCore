@@ -24,7 +24,7 @@ static func from_element(element: int) -> int:
 			return Type.PHYSICAL
 
 static func element_deals_damage(element: int) -> bool:
-	return element != ElementalTypes.ElementType.WATER and element != ElementalTypes.ElementType.AIR
+	return element != ElementalTypes.ElementType.WATER
 
 static func to_key(damage_type: int) -> String:
 	match damage_type:

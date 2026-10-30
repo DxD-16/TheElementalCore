@@ -14,14 +14,21 @@ func _run_checks() -> void:
 	await get_tree().process_frame
 	_set_enemy_health(timed_enemy, 5000)
 	_set_enemy_health(shatter_enemy, 10000)
+	timed_enemy.definition.resistances["ice"] = 0.0
+	shatter_enemy.definition.resistances["ice"] = 0.0
 
 	timed_enemy.apply_elemental_hit(0, timed_enemy.global_position, ElementalTypes.ElementType.ICE, 100.0)
 	timed_enemy.apply_elemental_hit(900, timed_enemy.global_position, ElementalTypes.ElementType.ICE, 100.0)
-	if not timed_enemy.is_deep_frozen() or timed_enemy._deep_freeze_accumulated_damage != 900:
+	var timed_freeze := timed_enemy.status_effect_manager.get_effect("freeze")
+	if not timed_enemy.is_deep_frozen() or timed_freeze == null or int(timed_freeze.data["damage_accumulated"]) != 900:
 		_fail("triggering ice hit should be accumulated by the freeze")
 		return
 	if timed_enemy.health_component.current_health != 5000:
 		_fail("frozen enemy should not lose health before the freeze ends")
+		return
+	timed_enemy.health_component.heal(100)
+	if timed_enemy.health_component.current_health != 5000:
+		_fail("frozen enemy should not be healed")
 		return
 	if timed_enemy.elemental_gauge.get_value(ElementalTypes.ElementType.ICE) != 0.0:
 		_fail("frozen enemies should not accumulate ice charge")
@@ -29,13 +36,16 @@ func _run_checks() -> void:
 
 	timed_enemy.definition.resistances["fire"] = 0.5
 	timed_enemy.apply_elemental_hit(200, timed_enemy.global_position, ElementalTypes.ElementType.FIRE, 25.0)
-	if timed_enemy._deep_freeze_accumulated_damage != 1000:
+	if int(timed_freeze.data["damage_accumulated"]) != 1000:
 		_fail("frozen damage counter should use damage after resistance")
+		return
+	if timed_enemy.health_component.current_health != 5000:
+		_fail("damage accumulated during freeze should not change health before thawing")
 		return
 	if timed_enemy.elemental_gauge.get_value(ElementalTypes.ElementType.FIRE) != 25.0:
 		_fail("non-ice elemental gauges should continue filling while frozen")
 		return
-	timed_enemy._advance_deep_freeze(10.0)
+	timed_enemy.status_effect_manager.tick(10.0)
 	if timed_enemy.is_deep_frozen() or timed_enemy.health_component.current_health != 4000:
 		_fail("freeze expiry should apply accumulated damage once without a bonus")
 		return

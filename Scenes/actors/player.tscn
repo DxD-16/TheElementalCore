@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://wcapomms6fnd" path="res://Scripts/player/states/death_state.gd" id="death_state_script"]
 [ext_resource type="Script" uid="uid://brqrhqxyjad8r" path="res://Scripts/items/inventory_data.gd" id="inv_data"]
 [ext_resource type="Script" uid="uid://b7yxvpuraf1b2" path="res://Scripts/player/states/landing_roll_state.gd" id="landing_roll_state"]
+[ext_resource type="Script" path="res://Scripts/player/states/air_dash_state.gd" id="air_dash_state_script"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_g4v7s"]
 height = 58.0
@@ -478,6 +479,11 @@ animations = [{
 "name": &"PlayerRoll",
 "speed": 18.0
 }, {
+"frames": [],
+"loop": 1,
+"name": &"PlayerDash",
+"speed": 18.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_b6l26")
@@ -551,6 +557,9 @@ script = ExtResource("landing_roll_state")
 
 [node name="AttackState" type="Node" parent="StateMachine" unique_id=1592831571]
 script = ExtResource("5_3smsa")
+
+[node name="AirDashState" type="Node" parent="StateMachine"]
+script = ExtResource("air_dash_state_script")
 
 [node name="Body" type="Node2D" parent="." unique_id=1481697970]
 

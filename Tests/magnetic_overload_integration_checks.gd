@@ -49,6 +49,14 @@ func _run_checks() -> void:
 	if absf(heavy.velocity.x) >= absf(nearby.velocity.x):
 		_fail("higher enemy weight should reduce magnetic acceleration")
 		return
+
+	outside.velocity = Vector2(INF, 0.0)
+	outside._reported_non_finite_physics_value = true
+	outside.apply_magnetic_attraction(Vector2.RIGHT, 1.0)
+	if outside.velocity != Vector2.ZERO:
+		_fail("magnetic attraction should clear a non-finite velocity before physics")
+		return
+
 	if not magnet._magnetic_overload_fields.is_empty():
 		_fail("magnetic fields should end after three seconds")
 		return

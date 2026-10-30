@@ -229,15 +229,18 @@ func _configure_attack_hitboxes(attack: AttackDefinition) -> void:
 func _process(delta: float) -> void:
 	if runtime == null:
 		return
+	var attack_speed_multiplier := 1.0
+	if source != null and source.has_method("get_status_multiplier"):
+		attack_speed_multiplier = float(source.call("get_status_multiplier", "attack_speed"))
 	if runtime.is_attacking:
-		attack_elapsed += delta
+		attack_elapsed += delta * attack_speed_multiplier
 		runtime.attack_timer = maxf(attack_duration - attack_elapsed, 0.0)
 		var progress := clampf(attack_elapsed / attack_duration, 0.0, 1.0)
 		_update_hitbox_activity(weapon_data.get_attack_step(runtime.combo_index), progress)
 		if runtime.attack_timer <= 0.0:
 			_finish_attack_step()
 	elif combo_reset_timer > 0.0:
-		combo_reset_timer = maxf(combo_reset_timer - delta, 0.0)
+		combo_reset_timer = maxf(combo_reset_timer - delta * attack_speed_multiplier, 0.0)
 		if combo_reset_timer == 0.0:
 			runtime.reset_combo()
 
@@ -355,10 +358,16 @@ func _on_attack_area_body_entered(target: Node2D) -> void:
 		knockback_direction = aim.normalized() * knockback_strength
 
 	var damage := maxi(step.damage, 0)
-	var element := weapon_data.element if step.element < 0 else step.element
 	var element_charge := maxf(step.element_charge, 0.0)
 	if target.has_method("apply_elemental_hit"):
-		target.apply_elemental_hit(damage, hit_position, element, element_charge, knockback_direction, source)
+		target.apply_elemental_hit(
+			damage,
+			hit_position,
+			ElementalTypes.from_string(weapon_data.element),
+			element_charge,
+			knockback_direction,
+			source
+		)
 	else:
 		target.take_damage(damage, hit_position, knockback_direction)
 	if knockback_strength > 0.0 and source != null and source.has_method("apply_attack_recoil"):

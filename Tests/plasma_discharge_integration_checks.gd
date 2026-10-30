@@ -21,7 +21,7 @@ func _run_checks() -> void:
 	if enemy.health_component.current_health != 9950 or not enemy.is_stunned():
 		_fail("first electric tick should respect resistance and stun for 0.1 seconds")
 		return
-	enemy._advance_stun(0.1)
+	enemy.status_effect_manager.tick(0.1)
 	if enemy.is_stunned():
 		_fail("plasma tick stun should expire after 0.1 seconds")
 		return

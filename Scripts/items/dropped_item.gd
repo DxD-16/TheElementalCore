@@ -1,32 +1,38 @@
 class_name DroppedItem
-extends Area2D
+extends CharacterBody2D
 
 ## Предмет, лежащий в мире. При контакте с игроком — подбирается.
 
+const PICKUP_RADIUS: float = 58.0
+const RARITY_COLORS: Dictionary = {
+	"common": Color(1.00, 1.00, 1.00),
+	"uncommon": Color(0.35, 0.9, 0.45),
+	"rare": Color(0.3, 0.6, 1.0),
+	"epic": Color(0.75, 0.4, 1.0),
+	"legendary": Color(1.0, 0.9, 0.5),
+}
 @export var item_id: String = ""
 @export var item_count: int = 1
 @export var pick_up_timeout = 2
 
 var item_instance: ItemInstance
 var _picked_up: bool = false
-var _velocity: Vector2 = Vector2.ZERO
+var _pickup_enabled: bool = false
 var _gravity: float = 650.0
 var _on_ground: bool = false
 var _bob_time: float = 0.0
-var _floor_y: float = 0.0
 
-@onready var sprite: Sprite2D = $Sprite2D
+@onready var visuals: Node2D = $Visuals
+@onready var sprite: Sprite2D = $Visuals/Sprite2D
+@onready var particles: GPUParticles2D = $Visuals/GPUParticles2D
+@onready var rarity_glow: PointLight2D = $Visuals/GPUParticles2D/PointLight2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
-	body_entered.connect(_on_body_entered)
 	# Задержка перед подбором (чтобы предмет успел красиво вылететь)
-	collision.set_deferred("disabled", true)
 	await get_tree().create_timer(pick_up_timeout).timeout
 	if is_instance_valid(self) and not _picked_up:
-		collision.set_deferred("disabled", false)
-		for body in get_overlapping_bodies():
-			_on_body_entered(body)
+		_pickup_enabled = true
 
 func setup(p_item_id: String, p_count: int = 1, launch_dir: Vector2 = Vector2.ZERO) -> void:
 	item_id = p_item_id
@@ -50,44 +56,43 @@ func setup_instance(instance: ItemInstance, p_count: int = 1, launch_dir: Vector
 	item_instance = instance.duplicate_instance()
 	item_id = item_instance.id
 	item_count = p_count
-	# Находим уровень пола с помощью RayCast вниз
-	var space_state := get_world_2d().direct_space_state
-	var query := PhysicsRayQueryParameters2D.create(global_position, global_position + Vector2(0, 300), 1)
-	var result := space_state.intersect_ray(query)
-	if result:
-		_floor_y = result.position.y - 4.0
-	else:
-		_floor_y = global_position.y + 10.0
 
 	# Начальная скорость вылета
 	if launch_dir != Vector2.ZERO:
-		_velocity = launch_dir
+		velocity = launch_dir
 	else:
-		_velocity = Vector2(randf_range(-100.0, 100.0), randf_range(-250.0, -150.0))
+		velocity = Vector2(randf_range(-100.0, 100.0), randf_range(-250.0, -150.0))
 
 	if sprite:
 		sprite.texture = item_instance.get_icon()
+	var rarity_color: Color = RARITY_COLORS.get(item_instance.definition.rarity, Color.WHITE)
+	particles.self_modulate = rarity_color
+	rarity_glow.color = rarity_color
 
 func _physics_process(delta: float) -> void:
 	if _picked_up:
 		return
 
 	if not _on_ground:
-		_velocity.y += _gravity * delta
-		_velocity.x = move_toward(_velocity.x, 0.0, 150.0 * delta)
-		global_position += _velocity * delta
-
-		if _velocity.y > 0.0 and global_position.y >= _floor_y:
-			global_position.y = _floor_y
-			_on_ground = true
-			_velocity = Vector2.ZERO
+		velocity.y += _gravity * delta
 	else:
 		_bob_time += delta * 3.0
-		if sprite:
-			sprite.position.y = sin(_bob_time) * 3.0
+		visuals.position.y = sin(_bob_time) * 3.0
+	velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta)
+	move_and_slide()
+	if is_on_floor():
+		_on_ground = true
+		velocity.y = 0.0
+
+	if _pickup_enabled:
+		for player in get_tree().get_nodes_in_group("Player"):
+			if player is Player and global_position.distance_to(player.global_position) <= PICKUP_RADIUS:
+				_on_body_entered(player)
+				if _picked_up:
+					break
 
 func _on_body_entered(body: Node2D) -> void:
-	if _picked_up:
+	if _picked_up or not _pickup_enabled:
 		return
 	if not body is Player:
 		return

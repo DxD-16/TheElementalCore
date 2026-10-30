@@ -109,6 +109,34 @@ func _get_reaction_config() -> Dictionary:
 		return {}
 
 	var effects: Dictionary = config["effects"]
+	var condensation: Variant = effects.get("condensation")
+	if not condensation is Dictionary:
+		push_error("[ElementalReactionResolver] Missing effects.condensation in elemental_reactions.json")
+		return {}
+	for key in [
+		"cloud_duration_seconds",
+		"cloud_radius_px",
+		"cloud_length_px",
+		"blind_duration_seconds",
+		"wet_charge_percent",
+		"wet_min_strength_percent"
+	]:
+		if not condensation.has(key) or not (condensation[key] is int or condensation[key] is float) or not is_finite(float(condensation[key])):
+			push_error("[ElementalReactionResolver] Invalid or missing effects.condensation.%s" % key)
+			return {}
+	if (
+		float(condensation["cloud_duration_seconds"]) <= 0.0
+		or float(condensation["cloud_radius_px"]) < 0.0
+		or float(condensation["cloud_length_px"]) < 0.0
+		or float(condensation["blind_duration_seconds"]) <= 0.0
+		or float(condensation["wet_charge_percent"]) < 0.0
+		or float(condensation["wet_charge_percent"]) > 100.0
+		or float(condensation["wet_min_strength_percent"]) < 0.0
+		or float(condensation["wet_min_strength_percent"]) > 100.0
+	):
+		push_error("[ElementalReactionResolver] Condensation values are outside valid ranges")
+		return {}
+
 	var thermo_burst: Variant = effects.get("thermo_burst")
 	if not thermo_burst is Dictionary:
 		push_error("[ElementalReactionResolver] Missing effects.thermo_burst in elemental_reactions.json")
@@ -262,9 +290,9 @@ func _resolve_reaction(config: Dictionary, primed_element: int, trigger_element:
 		if reaction_type == "none":
 			var environmental_trigger := environment_element
 			var damage_element := primed_element
-			if trigger_element == ElementalTypes.ElementType.WATER or trigger_element == ElementalTypes.ElementType.AIR:
+			if trigger_element == ElementalTypes.ElementType.WATER:
 				environmental_trigger = trigger_element
-			elif primed_element == ElementalTypes.ElementType.WATER or primed_element == ElementalTypes.ElementType.AIR:
+			elif primed_element == ElementalTypes.ElementType.WATER:
 				environmental_trigger = primed_element
 				damage_element = trigger_element
 			if environmental_trigger != ElementalTypes.ElementType.NONE:

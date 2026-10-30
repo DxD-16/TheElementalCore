@@ -32,7 +32,14 @@ func _physics_process(delta: float) -> void:
 		current_state.physics_update(delta)
 
 func _are_controls_locked() -> bool:
-	return current_state != null and current_state.player != null and current_state.player.controls_locked
+	if current_state == null or current_state.player == null:
+		return false
+	var player := current_state.player as Player
+	return (
+		player.controls_locked
+		or player.status_effect_manager.is_physics_disabled()
+		or not player.status_effect_manager.can_perform_action("attack")
+	)
 
 func transition_to(target_state_name: String) -> void:
 	if _is_transitioning:

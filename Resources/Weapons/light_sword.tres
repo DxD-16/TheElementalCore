@@ -67,10 +67,10 @@ metadata/_custom_type_script = "uid://dli1b6gaf72nt"
 [sub_resource type="Resource" id="Resource_jnxi4"]
 script = ExtResource("1_f2fyj")
 attack_name = "Strike1"
+damage = 40
 animation_name = "LightSword_atk1"
 animation_frames = SubResource("SpriteFrames_33yhe")
-element = 1
-element_charge = 50.0
+element_charge = 40.0
 hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_cp56x")])
 metadata/_custom_type_script = "uid://0iqs5scjvosq"
 
@@ -138,12 +138,11 @@ metadata/_custom_type_script = "uid://dli1b6gaf72nt"
 [sub_resource type="Resource" id="Resource_m1efj"]
 script = ExtResource("1_f2fyj")
 attack_name = "Strike2"
-damage = 20
+damage = 30
 knockback = 80.0
 animation_name = "LightSword_atk2"
 animation_frames = SubResource("SpriteFrames_mai8y")
-element = 1
-element_charge = 50.0
+element_charge = 30.0
 hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_76v2p")])
 metadata/_custom_type_script = "uid://0iqs5scjvosq"
 
@@ -283,11 +282,10 @@ metadata/_custom_type_script = "uid://dli1b6gaf72nt"
 [sub_resource type="Resource" id="Resource_vi55g"]
 script = ExtResource("1_f2fyj")
 attack_name = "Strike4"
-damage = 40
+damage = 60
 knockback = 300.0
 animation_name = "LightSword_atk4"
 animation_frames = SubResource("SpriteFrames_4l03e")
-element = 1
 element_charge = 30.0
 hitboxes = Array[ExtResource("3_ty21q")]([SubResource("Resource_cjixv")])
 metadata/_custom_type_script = "uid://0iqs5scjvosq"
@@ -296,5 +294,6 @@ metadata/_custom_type_script = "uid://0iqs5scjvosq"
 script = ExtResource("2_o5xog")
 id = "light_sword"
 display_name = "Light Sword"
+element = "Electric"
 attacks = Array[ExtResource("1_f2fyj")]([SubResource("Resource_jnxi4"), SubResource("Resource_m1efj"), SubResource("Resource_7j84g"), SubResource("Resource_vi55g")])
 metadata/_custom_type_script = "uid://b08aiss43668u"

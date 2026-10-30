@@ -18,6 +18,7 @@ var resistances: Dictionary = {
 	"ice": 0.0
 }
 var status_immunities: Array = []
+var status_duration_overrides: Dictionary = {}
 var attack_patterns: Array = []
 var drop_table: Array = []
 var behavior: Dictionary = {}
@@ -70,6 +71,8 @@ func _apply_data(p_data: Dictionary) -> void:
 			resistances[damage_type] = minf(float(resistance), 1.0)
 	if p_data.has("status_immunities") and p_data["status_immunities"] is Array:
 		status_immunities = p_data["status_immunities"].duplicate()
+	if p_data.has("status_duration_overrides") and p_data["status_duration_overrides"] is Dictionary:
+		status_duration_overrides = p_data["status_duration_overrides"].duplicate()
 	if p_data.has("attack_patterns") and p_data["attack_patterns"] is Array:
 		attack_patterns = p_data["attack_patterns"].duplicate()
 	if p_data.has("drop_table") and p_data["drop_table"] is Array:

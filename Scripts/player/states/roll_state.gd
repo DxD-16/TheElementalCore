@@ -70,7 +70,7 @@ func enter() -> void:
 	roll_elapsed_time = 0.0
 
 	# Начальная резкая скорость рывка
-	current_roll_speed = player.speed * initial_speed_multiplier
+	current_roll_speed = player.speed * initial_speed_multiplier * player.get_status_multiplier("movement_speed")
 	player.velocity.x = roll_direction * current_roll_speed
 
 	if player.animated_sprite:
@@ -95,8 +95,9 @@ func physics_update(delta: float) -> void:
 	# Плавный спад ускорения от стартового значения до конца анимации кувырка
 	var t := clampf(roll_elapsed_time / roll_duration, 0.0, 1.0) if roll_duration > 0.0 else 1.0
 	var ease_t := 1.0 - pow(1.0 - t, 2.0)
-	var start_speed := player.speed * initial_speed_multiplier
-	var end_speed := player.speed * final_speed_multiplier
+	var movement_multiplier := player.get_status_multiplier("movement_speed")
+	var start_speed := player.speed * initial_speed_multiplier * movement_multiplier
+	var end_speed := player.speed * final_speed_multiplier * movement_multiplier
 	current_roll_speed = lerpf(start_speed, end_speed, ease_t)
 
 	# Игрок не останавливается до окончания анимации

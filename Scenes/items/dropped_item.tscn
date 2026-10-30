@@ -1,19 +1,71 @@
 [gd_scene format=3 uid="uid://daagdxdvuqysl"]
 
 [ext_resource type="Script" uid="uid://dw1yj21g0nej7" path="res://Scripts/items/dropped_item.gd" id="1_drop"]
-[ext_resource type="Texture2D" uid="uid://digfkm22sd6qu" path="res://Sprites/items/bottle_test.png" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://ch20keux5b6gp" path="res://Sprites/effects/GlowingParticle.png" id="2_okhlh"]
+
+[sub_resource type="Gradient" id="Gradient_or6ny"]
+offsets = PackedFloat32Array(0, 0.6268657, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.6392157, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_avnxn"]
+gradient = SubResource("Gradient_or6ny")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_yf5fn"]
+lifetime_randomness = 0.4
+particle_flag_align_y = true
+emission_shape = 6
+emission_ring_axis = Vector3(0, 0, 1)
+emission_ring_height = 10.0
+emission_ring_radius = 10.0
+emission_ring_inner_radius = 10.0
+emission_ring_cone_angle = 90.0
+angle_min = -179.99998
+angle_max = 180.00002
+gravity = Vector3(0, 0, 0)
+radial_accel_min = 0.09999776
+radial_accel_max = 0.09999776
+scale_min = 0.19999999
+scale_max = 0.19999999
+color = Color(1, 1, 1, 0.53333336)
+color_ramp = SubResource("GradientTexture1D_avnxn")
+hue_variation_min = -2.2351742e-08
+hue_variation_max = -2.2351742e-08
+
+[sub_resource type="Gradient" id="Gradient_okhlh"]
+offsets = PackedFloat32Array(0, 0.5416667)
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_g4v7s"]
+gradient = SubResource("Gradient_okhlh")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_pickup"]
-radius = 14.0
+radius = 15.033297
 
-[node name="DroppedItem" type="Area2D" unique_id=1592928210]
+[node name="DroppedItem" type="CharacterBody2D" unique_id=1592928210]
 collision_layer = 0
 script = ExtResource("1_drop")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=22313298]
+[node name="Visuals" type="Node2D" parent="." unique_id=206076151]
 scale = Vector2(0.5, 0.5)
-texture = ExtResource("2_icon")
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="Visuals" unique_id=1738672824]
+scale = Vector2(2, 2)
+amount = 60
+texture = ExtResource("2_okhlh")
+lifetime = 10.0
+use_fixed_seed = true
+seed = 4045248168
+fixed_fps = 60
+visibility_rect = Rect2(-50, -50, 100, 100)
+local_coords = true
+process_material = SubResource("ParticleProcessMaterial_yf5fn")
+
+[node name="PointLight2D" type="PointLight2D" parent="Visuals/GPUParticles2D" unique_id=1620035245]
+texture = SubResource("GradientTexture2D_g4v7s")
+
+[node name="Sprite2D" type="Sprite2D" parent="Visuals" unique_id=22313298]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=588944333]
-scale = Vector2(2, 2)
 shape = SubResource("CircleShape2D_pickup")

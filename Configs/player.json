@@ -1,9 +1,9 @@
 {
   "movement": {
 	"speed": 300.0,
-	"jump_velocity": -420.0,
+	"jump_velocity": -520.0,
 	"acceleration": 800.0,
-	"friction": 900.0,
+	"friction": 1200.0,
 	"coyote_time": 0.15,
 	"jump_buffer_time": 0.15,
 	"jump_cut_multiplier": 0.5,
@@ -16,6 +16,13 @@
 	"weight": 1.0
   },
   "states": {
+	"air_dash": {
+		"enabled": true,
+		"max_charges": 3,
+		"duration": 0.2,
+		"wall_recovery_duration": 0.2,
+		"speed": 600.0
+	},
 	"roll": {
 	  "initial_speed_multiplier": 2.4,
 	  "final_speed_multiplier": 1.0,
@@ -25,7 +32,7 @@
 	  "fall_anim_delay": 0.25,
 	  "recovery_min_fall_time": 0.5,
 	  "vertical_land_threshold": 250.0,
-	  "fall_damage_grace_time": 0.8,
+	  "fall_damage_grace_time": 1.0,
 	  "fall_damage_interval": 0.01
 	},
 	"attack": {

@@ -35,7 +35,9 @@ func _ready() -> void:
 func _load_default_loot() -> void:
 	loot_table = [
 		{"item_id": "health_potion", "min_count": 2, "max_count": 5, "chance": 1.0},
-		{"item_id": "big_health_potion", "min_count": 1, "max_count": 2, "chance": 0.5}
+		{"item_id": "big_health_potion", "min_count": 1, "max_count": 2, "chance": 0.5},
+		{"item_id": "light_sword","min_count": 1, "max_count": 1, "chance": 1.0},
+		{"item_id": "great_sword","min_count": 1, "max_count": 1, "chance": 1.0}
 	]
 
 func _populate_initial_loot() -> void:

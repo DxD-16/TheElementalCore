@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WeaponItemDefinition" format=3 uid="uid://t2g0805v50wn"]
+
+[ext_resource type="Script" uid="uid://e2dnrg6l8ggm" path="res://Scripts/items/definitions/weapon_item_definition.gd" id="1_n6cyl"]
+[ext_resource type="Resource" uid="uid://dyr37anhs0ot3" path="res://Resources/Weapons/great_sword.tres" id="2_1wf3j"]
+
+[resource]
+script = ExtResource("1_n6cyl")
+weapon_definition = ExtResource("2_1wf3j")
+id = "great_sword"
+item_name = "Great Sword"
+description = "Massive Heavy Sword"
+icon_path = "res://Sprites/items/GreatSword.png"
+rarity = "epic"
+metadata/_custom_type_script = "uid://e2dnrg6l8ggm"

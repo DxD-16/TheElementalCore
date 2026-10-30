@@ -1,14 +1,13 @@
-[gd_resource type="Resource" script_class="WeaponItemDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="WeaponItemDefinition" format=3 uid="uid://dosqve34kowmy"]
 
-[ext_resource type="Script" path="res://Scripts/items/definitions/weapon_item_definition.gd" id="1_definition"]
-[ext_resource type="Resource" path="res://Resources/Weapons/light_sword.tres" id="2_weapon"]
+[ext_resource type="Script" uid="uid://e2dnrg6l8ggm" path="res://Scripts/items/definitions/weapon_item_definition.gd" id="1_definition"]
+[ext_resource type="Resource" uid="uid://drbd1v5rt8mog" path="res://Resources/Weapons/light_sword.tres" id="2_weapon"]
 
 [resource]
 script = ExtResource("1_definition")
+weapon_definition = ExtResource("2_weapon")
 id = "light_sword"
 item_name = "Light Sword"
 description = "A basic sword for close combat."
-stackable = false
-max_stack = 1
-rarity = "common"
-weapon_definition = ExtResource("2_weapon")
+icon_path = "res://Sprites/items/LightSword.png"
+rarity = "rare"

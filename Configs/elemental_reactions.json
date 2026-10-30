@@ -20,20 +20,26 @@
   "combined": {
 	"1_2": "plasma_discharge",
 	"1_3": "ether_detonation",
-	"1_4": "steam_veil",
+	"1_4": "condensation",
 	"2_3": "exhaustion",
 	"2_4": "isolation",
 	"3_4": "weakness"
   },
   "environment": {
 	"1_5": "neutralization",
-	"1_6": "ignition",
 	"2_5": "chain_conductivity",
 	"3_5": "poison",
-	"4_5": "instant_freeze",
-	"4_6": "cold_wind"
+	"4_5": "instant_freeze"
   },
   "effects": {
+	"condensation": {
+	  "cloud_duration_seconds": 5.0,
+	  "cloud_radius_px": 50.0,
+	  "cloud_length_px": 40.0,
+	  "blind_duration_seconds": 5.0,
+	  "wet_charge_percent": 100.0,
+	  "wet_min_strength_percent": 69.0
+	},
 	"thermo_burst": {
 	  "resistance_reduction_percent": 50.0,
 	  "resistance_reduction_seconds": 5.0,

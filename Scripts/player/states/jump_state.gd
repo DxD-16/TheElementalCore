@@ -87,7 +87,7 @@ func _start_landing() -> void:
 		horizontal_speed = absf(player.velocity.x)
 
 	# Косое приземление → кувырок с продолжением движения
-	if horizontal_speed > horizontal_land_threshold:
+	if horizontal_speed > horizontal_land_threshold and player.can_perform_action("dash"):
 		var landing_roll := state_machine.get_node_or_null("LandingRollState") as LandingRollState
 		if landing_roll:
 			landing_roll.inherited_velocity_x = last_air_velocity.x

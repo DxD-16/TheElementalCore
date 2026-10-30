@@ -1,0 +1,61 @@
+{
+  "repeat_policy": "refresh",
+  "statuses": {
+    "freeze": {
+      "display_name": "Freeze",
+      "description": "Stops action, physics and animation. Damage is deferred until thawing; healing is blocked.",
+      "default_duration_seconds": 10.0,
+      "applies_to": ["player", "enemy"],
+      "blocked_actions": ["move", "attack", "jump", "dash"],
+      "allowed_actions": ["status_timer", "deferred_damage_accumulation"],
+      "physics": "disabled",
+      "damage_policy": "defer",
+      "blocks_healing": true,
+      "animation": "freeze",
+      "shatter_threshold_damage": 1000,
+      "shatter_bonus_damage_multiplier": 1.0
+    },
+    "stun": {
+      "display_name": "Stun",
+      "description": "Prevents movement and attacks while leaving physics, damage and healing enabled.",
+      "default_duration_seconds": 0.1,
+      "applies_to": ["player", "enemy"],
+      "blocked_actions": ["move", "attack", "jump", "dash"],
+      "allowed_actions": ["physics", "receive_damage", "receive_healing"],
+      "physics": "enabled",
+      "animation": "stun_placeholder"
+    },
+    "immobilize": {
+      "display_name": "Immobilize",
+      "description": "Prevents voluntary movement, jumping and rolling. Other actions remain available.",
+      "default_duration_seconds": 10.0,
+      "applies_to": ["player", "enemy"],
+      "blocked_actions": ["move", "jump", "dash"],
+      "allowed_actions": ["attack", "physics", "receive_damage", "receive_healing"],
+      "physics": "enabled"
+    },
+    "slow": {
+      "display_name": "Slow",
+      "description": "Reduces movement and animation speed and lengthens attack intervals.",
+      "default_duration_seconds": 10.0,
+      "applies_to": ["player", "enemy"],
+      "blocked_actions": [],
+      "allowed_actions": ["all_actions", "physics", "receive_damage", "receive_healing"],
+      "physics": "enabled",
+      "modifiers": {
+        "movement_speed": 0.5,
+        "animation_speed": 0.5,
+        "attack_speed": 0.5
+      }
+    },
+    "blind": {
+      "display_name": "Blind",
+      "description": "Prevents enemies from acquiring the player as a target.",
+      "default_duration_seconds": 5.0,
+      "applies_to": ["enemy"],
+      "blocked_actions": ["target_acquisition"],
+      "allowed_actions": ["all_actions_except_target_acquisition", "physics", "receive_damage", "receive_healing"],
+      "physics": "enabled"
+    }
+  }
+}

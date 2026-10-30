@@ -26,9 +26,15 @@ func _ready() -> void:
 		"ether": 0.0,
 		"ice": 0.0
 	}
+	var dummy_status_duration_overrides: Dictionary = {}
 	if ConfigManager:
 		dummy_weight = ConfigManager.get_float("entities", "dummy.weight", dummy_weight)
 		dummy_resistances = ConfigManager.get_dict("entities", "dummy.resistances", dummy_resistances)
+		dummy_status_duration_overrides = ConfigManager.get_dict(
+			"entities",
+			"dummy.status_duration_overrides",
+			dummy_status_duration_overrides
+		)
 	definition = EnemyDefinitionClass.new("dummy", {
 		"display_name": "Dummy",
 		"max_health": 1000,
@@ -37,6 +43,7 @@ func _ready() -> void:
 		"detection_range": 0.0,
 		"attack_range": 0.0,
 		"resistances": dummy_resistances,
+		"status_duration_overrides": dummy_status_duration_overrides,
 		"drop_table": drop_table
 	})
 	set_definition(definition)

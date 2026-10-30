@@ -1,8 +1,9 @@
 {
   "dummy": {
-	"max_health": 100,
+	"max_health": 1500,
 	"weight": 1.0,
 	"contact_damage": 5,
+	"status_duration_overrides": {},
 	"resistances": {
 	  "physical": 0.5,
 	  "fire": 0.5,

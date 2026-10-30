@@ -7,8 +7,7 @@ enum ElementType {
 	ELECTRIC = 2,
 	ETHER = 3,
 	ICE = 4,
-	WATER = 5,
-	AIR = 6
+	WATER = 5
 }
 
 static func element_to_string(element: int) -> String:
@@ -23,8 +22,6 @@ static func element_to_string(element: int) -> String:
 			return "Ice"
 		ElementType.WATER:
 			return "Water"
-		ElementType.AIR:
-			return "Air"
 		_:
 			return "None"
 
@@ -41,8 +38,6 @@ static func from_string(value: String) -> int:
 			return ElementType.ICE
 		"water":
 			return ElementType.WATER
-		"air":
-			return ElementType.AIR
 		_:
 			return ElementType.NONE
 

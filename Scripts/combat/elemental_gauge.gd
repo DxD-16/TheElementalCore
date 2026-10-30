@@ -13,8 +13,7 @@ func _init() -> void:
 		ElementalTypes.ElementType.ELECTRIC,
 		ElementalTypes.ElementType.ETHER,
 		ElementalTypes.ElementType.ICE,
-		ElementalTypes.ElementType.WATER,
-		ElementalTypes.ElementType.AIR
+		ElementalTypes.ElementType.WATER
 	]:
 		values[element] = 0.0
 
@@ -26,10 +25,12 @@ func set_charge_threshold(value: float) -> void:
 	for element in values:
 		values[element] = minf(float(values[element]), charge_threshold)
 
-func set_value(element: int, amount: float) -> void:
+func set_value(element: int, amount: float, duration: float = 0.0) -> void:
 	if element == ElementalTypes.ElementType.NONE:
 		return
 	values[element] = clampf(amount, 0.0, charge_threshold)
+	if is_finite(duration) and duration > 0.0:
+		charge_timers[element] = duration
 
 func add_value(element: int, amount: float, duration: float = 0.0) -> void:
 	if element == ElementalTypes.ElementType.NONE or not is_finite(amount) or amount <= 0.0:
@@ -69,8 +70,7 @@ func get_primed_elements() -> Array[int]:
 		ElementalTypes.ElementType.ELECTRIC,
 		ElementalTypes.ElementType.ETHER,
 		ElementalTypes.ElementType.ICE,
-		ElementalTypes.ElementType.WATER,
-		ElementalTypes.ElementType.AIR
+		ElementalTypes.ElementType.WATER
 	]
 	var result: Array[int] = []
 	for element in priority:

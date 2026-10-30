@@ -13,6 +13,14 @@ func _ready() -> void:
 
 func take_damage(damage: int) -> void:
 	damage = maxi(damage, 0)
+	var actor := get_parent()
+	if actor != null:
+		for property in actor.get_property_list():
+			if str(property.get("name", "")) != "status_effect_manager":
+				continue
+			var manager: StatusEffectManager = actor.get("status_effect_manager")
+			if manager != null and manager.defer_damage_until_thawed(damage):
+				return
 	current_health = clampi(current_health - damage, 0, max_health)
 	health_changed.emit(current_health)
 
@@ -20,5 +28,13 @@ func take_damage(damage: int) -> void:
 		died.emit()
 
 func heal(amount: int) -> void:
+	var actor := get_parent()
+	if actor != null:
+		for property in actor.get_property_list():
+			if str(property.get("name", "")) != "status_effect_manager":
+				continue
+			var manager: StatusEffectManager = actor.get("status_effect_manager")
+			if manager != null and not manager.can_receive_healing():
+				return
 	current_health = clampi(current_health + amount, 0, max_health)
 	health_changed.emit(current_health)

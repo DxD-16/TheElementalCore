@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ytr5a1s5h1dj"
-path="res://.godot/imported/dummy.png-ca6344f251b97d5c7836ff35387f5afc.ctex"
+uid="uid://cmdd2dik1qfan"
+path="res://.godot/imported/GreatSword.png-a6267a33a221070303148febdf772aca.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Sprites/enemies/dummy.png"
-dest_files=["res://.godot/imported/dummy.png-ca6344f251b97d5c7836ff35387f5afc.ctex"]
+source_file="res://Sprites/items/GreatSword.png"
+dest_files=["res://.godot/imported/GreatSword.png-a6267a33a221070303148febdf772aca.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cykow8cwxt2qm"
-path="res://.godot/imported/jewel.png-5776db33a7804cff5564c743baa1b01c.ctex"
+uid="uid://bp6veq3r6hkxl"
+path="res://.godot/imported/GreatSwordAttacks.png-6f7922bb244a2c99f2a5e73890fca740.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Sprites/world/jewel.png"
-dest_files=["res://.godot/imported/jewel.png-5776db33a7804cff5564c743baa1b01c.ctex"]
+source_file="res://Animations/player/Maxim's new animations/GreatSwordAttacks.png"
+dest_files=["res://.godot/imported/GreatSwordAttacks.png-6f7922bb244a2c99f2a5e73890fca740.ctex"]
 
 [params]
 

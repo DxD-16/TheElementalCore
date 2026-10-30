@@ -8,6 +8,9 @@ var attack_input_action: StringName = &"Normal_Attack"
 func enter() -> void:
 	if not player:
 		return
+	if not player.can_perform_action("attack"):
+		call_deferred("_return_to_movement_state")
+		return
 
 	if Input.is_action_just_pressed("Secondary_Attack") \
 	and not Input.is_action_just_pressed("Normal_Attack"):

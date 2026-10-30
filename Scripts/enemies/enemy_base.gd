@@ -23,17 +23,17 @@ var elemental_gauge: ElementalGauge = ElementalGauge.new()
 var elemental_reaction_resolver: ElementalReactionResolver = ElementalReactionResolver.new()
 var _resistance_reduction_effects: Array[Dictionary] = []
 var _magnetic_overload_fields: Array[Dictionary] = []
-var _deep_freeze_remaining: float = 0.0
-var _deep_freeze_accumulated_damage: int = 0
-var _deep_freeze_shatter_bonus_multiplier: float = 0.0
 var _plasma_discharge_effects: Array[Dictionary] = []
-var _stun_remaining: float = 0.0
 var _ether_detonation_effects: Array[Dictionary] = []
 var _exhaustion_remaining: float = 0.0
 var _exhaustion_healing_percent: float = 0.0
+var _reported_non_finite_physics_value: bool = false
 
 func _ready() -> void:
 	add_to_group("Enemies")
+	status_effect_manager.configure(self, definition.status_duration_overrides if definition != null else {})
+	status_effect_manager.status_applied.connect(_on_status_applied)
+	status_effect_manager.status_removed.connect(_on_status_removed)
 	if ConfigManager:
 		elemental_gauge.set_charge_threshold(
 			ConfigManager.get_float("elemental_reactions", "charge.threshold_percent", 100.0)
@@ -83,6 +83,8 @@ func set_definition(p_definition) -> void:
 	definition = p_definition
 	if definition == null:
 		definition = EnemyDefinitionClass.new("enemy")
+	if is_inside_tree():
+		status_effect_manager.configure(self, definition.status_duration_overrides)
 	move_speed = float(definition.move_speed)
 	horizontal_friction = float(definition.horizontal_friction)
 	if health_component:
@@ -104,32 +106,50 @@ func get_definition():
 
 func _process(delta: float) -> void:
 	elemental_gauge.advance_time(delta)
+	status_effect_manager.tick(delta)
 	_advance_resistance_reduction_effects(delta)
-	_advance_deep_freeze(delta)
-	_advance_stun(delta)
 	_advance_plasma_discharge_effects(delta)
 	_advance_ether_detonation_effects(delta)
 	_advance_exhaustion(delta)
 	if attack_cooldown > 0.0:
-		attack_cooldown = maxf(0.0, attack_cooldown - delta)
-	if state_machine != null and not is_deep_frozen() and not is_stunned():
+		attack_cooldown = maxf(
+			0.0,
+			attack_cooldown - delta * status_effect_manager.get_multiplier("attack_speed")
+		)
+	if state_machine != null and can_perform_action("attack"):
 		state_machine.update(delta)
 
 func _physics_process(delta: float) -> void:
-	if is_deep_frozen() or is_stunned():
+	if status_effect_manager.is_physics_disabled():
 		velocity = Vector2.ZERO
 		return
 	_update_magnetic_overload_fields(delta)
 	if not is_on_floor():
 		velocity.y += gravity * delta
-	if state_machine != null:
+	if state_machine != null and can_perform_action("attack"):
 		state_machine.physics_update(delta)
+	if not can_perform_action("move"):
+		velocity.x = 0.0
 	velocity.x = move_toward(velocity.x, 0.0, horizontal_friction * delta)
+	if not _is_finite_vector2(velocity):
+		_report_non_finite_physics_value("velocity")
+		velocity = Vector2.ZERO
 	move_and_slide()
 
 func apply_knockback(force: Vector2) -> void:
+	if not _is_finite_vector2(force):
+		_report_non_finite_physics_value("knockback")
+		return
 	var enemy_weight := float(definition.weight) if definition != null else 1.0
-	velocity += force / enemy_weight
+	if not is_finite(enemy_weight) or enemy_weight <= 0.0:
+		push_error("[EnemyBase] Enemy weight must be finite and greater than zero")
+		return
+	var next_velocity := velocity + force / enemy_weight
+	if not _is_finite_vector2(next_velocity):
+		_report_non_finite_physics_value("knockback result")
+		velocity = Vector2.ZERO
+		return
+	velocity = next_velocity
 
 func apply_damage(
 	amount: int,
@@ -142,11 +162,7 @@ func apply_damage(
 	if is_dead:
 		return
 	var final_damage: int = EnemyDamageResolverClass.calculate_damage(self, amount, damage_type)
-	if is_deep_frozen():
-		_deep_freeze_accumulated_damage += final_damage
-		var config := _get_deep_freeze_config()
-		if not config.is_empty() and _deep_freeze_accumulated_damage > int(config["shatter_threshold_damage"]):
-			_release_deep_freeze_damage(1.0 + _deep_freeze_shatter_bonus_multiplier, hit_position)
+	if status_effect_manager.defer_damage_until_thawed(final_damage):
 		return
 	_apply_final_damage(final_damage, hit_position, knockback, source, damage_type, is_reaction_damage)
 
@@ -219,21 +235,17 @@ func apply_elemental_hit(
 		elemental_gauge.add_value(element, charge_amount, charge_duration)
 
 func is_deep_frozen() -> bool:
-	return _deep_freeze_remaining > 0.0
+	return has_status("freeze")
 
 func is_stunned() -> bool:
-	return _stun_remaining > 0.0
+	return has_status("stun")
 
 func _apply_stun(duration: float) -> void:
 	if not is_finite(duration) or duration <= 0.0:
 		push_error("[EnemyBase] Stun duration must be finite and greater than zero")
 		return
-	_stun_remaining = maxf(_stun_remaining, duration)
+	status_effect_manager.apply("stun", 1.0, get_status_duration("stun", duration))
 	velocity = Vector2.ZERO
-
-func _advance_stun(delta: float) -> void:
-	if is_finite(delta) and delta > 0.0:
-		_stun_remaining = maxf(_stun_remaining - delta, 0.0)
 
 func _start_plasma_discharge(strength: int) -> void:
 	var config: Dictionary = ConfigManager.get_dict("elemental_reactions", "effects.plasma_discharge", {}) if ConfigManager else {}
@@ -335,26 +347,73 @@ func _start_deep_freeze(strength: int) -> void:
 		return
 
 	var scale := clampf(float(strength) / 100.0, 0.0, 1.0)
-	_deep_freeze_remaining = float(config["freeze_duration_seconds"]) * scale
-	_deep_freeze_accumulated_damage = 0
-	_deep_freeze_shatter_bonus_multiplier = float(config["shatter_bonus_damage_multiplier"]) * scale
+	var base_duration := get_status_duration("freeze", float(config["freeze_duration_seconds"]))
+	var status_data := {
+		"shatter_threshold_damage": int(config["shatter_threshold_damage"]),
+		"shatter_bonus_damage_multiplier": float(config["shatter_bonus_damage_multiplier"]) * scale
+	}
+	status_effect_manager.apply("freeze", scale, base_duration * scale, null, status_data)
 	velocity = Vector2.ZERO
 
-func _advance_deep_freeze(delta: float) -> void:
-	if not is_deep_frozen() or not is_finite(delta) or delta <= 0.0:
-		return
-	_deep_freeze_remaining = maxf(_deep_freeze_remaining - delta, 0.0)
-	if _deep_freeze_remaining == 0.0:
-		_release_deep_freeze_damage(1.0, global_position)
-
-func _release_deep_freeze_damage(multiplier: float, hit_position: Vector2) -> void:
-	var accumulated_damage := _deep_freeze_accumulated_damage
-	_deep_freeze_remaining = 0.0
-	_deep_freeze_accumulated_damage = 0
-	_deep_freeze_shatter_bonus_multiplier = 0.0
+func _release_deep_freeze_damage(effect: StatusEffect, reason: String) -> void:
+	var accumulated_damage := int(effect.data.get("damage_accumulated", 0))
+	var multiplier := 1.0
+	if reason == "shattered":
+		multiplier += float(effect.data.get("shatter_bonus_damage_multiplier", 0.0))
 	var released_damage := int(round(float(accumulated_damage) * multiplier))
 	if released_damage > 0:
-		_apply_final_damage(released_damage, hit_position, Vector2.ZERO, null, DamageTypes.Type.PURE, true)
+		_apply_final_damage(released_damage, global_position, Vector2.ZERO, null, DamageTypes.Type.PURE, true)
+
+func get_status_duration(status_id: String, fallback: float = -1.0) -> float:
+	if fallback <= 0.0:
+		fallback = StatusCatalog.get_default_duration(status_id)
+	return status_effect_manager.get_configured_duration(status_id, fallback)
+
+func apply_status(
+	status_id: String,
+	strength: float = 1.0,
+	duration: float = -1.0,
+	source: Node = null,
+	data: Dictionary = {}
+) -> void:
+	var resolved_duration := duration
+	if resolved_duration <= 0.0:
+		resolved_duration = get_status_duration(status_id)
+	elif definition != null and definition.status_duration_overrides.has(status_id):
+		resolved_duration = get_status_duration(status_id, resolved_duration)
+	status_effect_manager.apply(status_id, strength, resolved_duration, source, data)
+
+func has_status(status_id: String) -> bool:
+	return status_effect_manager.has_effect(status_id)
+
+func can_perform_action(action_name: String) -> bool:
+	return not is_dead and status_effect_manager.can_perform_action(action_name)
+
+func get_status_multiplier(modifier: String) -> float:
+	return status_effect_manager.get_multiplier(modifier)
+
+func get_effective_move_speed() -> float:
+	return move_speed * status_effect_manager.get_multiplier("movement_speed")
+
+func _on_status_applied(effect: StatusEffect) -> void:
+	if effect.id in ["freeze", "stun", "immobilize"]:
+		velocity.x = 0.0
+	if effect.id in ["freeze", "stun"] and state_machine != null:
+		state_machine.transition_to("idle")
+	if effect.id == "stun":
+		_play_stun_animation_placeholder()
+
+func _on_status_removed(effect: StatusEffect, reason: String) -> void:
+	if effect.id == "freeze" and reason in ["expired", "shattered"]:
+		_release_deep_freeze_damage(effect, reason)
+
+func _play_stun_animation_placeholder() -> void:
+	var sprite := find_child("AnimatedSprite2D", true, false) as AnimatedSprite2D
+	if sprite != null:
+		for animation_name in ["Stunned", "EnemyStunned"]:
+			if sprite.sprite_frames != null and sprite.sprite_frames.has_animation(animation_name):
+				sprite.play(animation_name)
+				return
 
 func get_effective_resistance(damage_type: int, base_resistance: float) -> float:
 	var strongest_reduction := 0.0
@@ -374,6 +433,8 @@ func _apply_reaction_effects(reaction: Dictionary, skip_reactions: Array[String]
 		if skip_reactions.has(reaction_type):
 			continue
 		match reaction_type:
+			"condensation":
+				_start_condensation(int(entry.get("strength", 0)))
 			"thermo_burst":
 				_apply_thermo_burst(int(entry.get("strength", 0)))
 			"magnetic_overload":
@@ -388,6 +449,40 @@ func _apply_reaction_effects(reaction: Dictionary, skip_reactions: Array[String]
 				_start_deep_freeze(int(entry.get("strength", 0)))
 			"exhaustion":
 				_start_exhaustion(int(entry.get("strength", 0)))
+
+func _start_condensation(strength: int) -> void:
+	var config: Dictionary = ConfigManager.get_dict("elemental_reactions", "effects.condensation", {}) if ConfigManager else {}
+	if config.is_empty():
+		push_error("[EnemyBase] Missing condensation configuration")
+		return
+	var initial_strength := ConfigManager.get_float("elemental_reactions", "strength.initial", 100.0) if ConfigManager else 100.0
+	if not is_finite(initial_strength) or initial_strength <= 0.0:
+		push_error("[EnemyBase] Reaction strength.initial must be greater than zero")
+		return
+	var strength_scale := clampf(float(strength) / initial_strength, 0.0, 1.0)
+	var cloud := SteamCloud.new()
+	cloud.setup(
+		global_position,
+		float(config["cloud_duration_seconds"]) * strength_scale,
+		float(config["cloud_radius_px"]),
+		float(config["cloud_length_px"]),
+		float(config["blind_duration_seconds"]) * strength_scale,
+		float(config["wet_charge_percent"]),
+		float(config["wet_min_strength_percent"]),
+		strength_scale * 100.0,
+		ConfigManager.get_float("elemental_reactions", "timers.element_charge_seconds", 10.0) if ConfigManager else 10.0
+	)
+	var scene := get_tree().current_scene
+	if scene == null:
+		scene = get_tree().root
+	scene.add_child(cloud)
+
+func apply_blind(duration: float) -> void:
+	if not is_finite(duration) or duration <= 0.0:
+		push_error("[EnemyBase] Blind duration must be finite and greater than zero")
+		return
+	var configured_duration := get_status_duration("blind", duration)
+	status_effect_manager.apply("blind", 1.0, minf(duration, configured_duration))
 
 func _start_exhaustion(strength: int) -> void:
 	var config: Dictionary = ConfigManager.get_dict("elemental_reactions", "effects.exhaustion", {}) if ConfigManager else {}
@@ -458,13 +553,22 @@ func _start_magnetic_overload(strength: int) -> void:
 	})
 
 func apply_magnetic_attraction(acceleration: Vector2, delta: float) -> void:
-	if is_dead or not is_finite(delta) or delta <= 0.0:
+	if is_dead or status_effect_manager.is_physics_disabled() or not is_finite(delta) or delta <= 0.0:
+		return
+	if not _is_finite_vector2(acceleration):
+		_report_non_finite_physics_value("magnetic acceleration")
+		velocity = Vector2.ZERO
 		return
 	var safe_weight := float(definition.weight) if definition != null else 1.0
 	if not is_finite(safe_weight) or safe_weight <= 0.0:
 		push_error("[EnemyBase] Enemy weight must be finite and greater than zero")
 		return
-	velocity += acceleration * delta / safe_weight
+	var next_velocity := velocity + acceleration * delta / safe_weight
+	if not _is_finite_vector2(next_velocity):
+		_report_non_finite_physics_value("magnetic acceleration result")
+		velocity = Vector2.ZERO
+		return
+	velocity = next_velocity
 
 func _update_magnetic_overload_fields(delta: float) -> void:
 	if _magnetic_overload_fields.is_empty() or not is_finite(delta) or delta <= 0.0:
@@ -481,9 +585,13 @@ func _update_magnetic_overload_fields(delta: float) -> void:
 			if enemy.is_dead:
 				continue
 			var offset := global_position - enemy.global_position
-			if offset.length_squared() > attraction_radius * attraction_radius:
+			if not _is_finite_vector2(offset):
+				_report_non_finite_physics_value("magnetic offset")
 				continue
-			if offset.length_squared() > 0.0:
+			var distance_squared := offset.length_squared()
+			if not is_finite(distance_squared) or distance_squared > attraction_radius * attraction_radius:
+				continue
+			if distance_squared > 0.0:
 				enemy.apply_magnetic_attraction(
 					offset.normalized() * float(field["attraction_acceleration"]),
 					delta
@@ -507,15 +615,31 @@ func _discharge_magnetic_overload(field: Dictionary) -> void:
 		if node == self or not node is EnemyBase:
 			continue
 		var enemy := node as EnemyBase
-		if enemy.is_dead or enemy.global_position.distance_squared_to(global_position) > radius * radius:
+		if enemy.is_dead:
+			continue
+		var offset := enemy.global_position - global_position
+		var distance_squared := offset.length_squared()
+		if (
+			not _is_finite_vector2(offset)
+			or not is_finite(distance_squared)
+			or distance_squared > radius * radius
+		):
 			continue
 
 		var knockback := Vector2.ZERO
-		var offset := enemy.global_position - global_position
 		if knockback_strength > 0.0:
-			var direction := offset.normalized() if offset.length_squared() > 0.0 else Vector2.RIGHT
+			var direction := offset.normalized() if distance_squared > 0.0 else Vector2.RIGHT
 			knockback = direction * knockback_strength
 		enemy.apply_damage(damage, enemy.global_position, DamageTypes.Type.ELECTRIC, self, knockback, true)
+
+func _is_finite_vector2(value: Vector2) -> bool:
+	return is_finite(value.x) and is_finite(value.y)
+
+func _report_non_finite_physics_value(value_name: String) -> void:
+	if _reported_non_finite_physics_value:
+		return
+	_reported_non_finite_physics_value = true
+	push_error("[EnemyBase] Non-finite %s encountered during combat physics" % value_name)
 
 func _apply_thermo_burst(strength: int) -> void:
 	var config: Dictionary = ConfigManager.get_dict("elemental_reactions", "effects.thermo_burst", {}) if ConfigManager else {}
@@ -606,6 +730,8 @@ func _spawn_loot() -> void:
 		dropped.setup(item_id, count, launch)
 
 func get_target() -> Node2D:
+	if has_status("blind"):
+		return null
 	return target
 
 func set_target(value: Node2D) -> void:
@@ -626,7 +752,7 @@ func get_definition_for_attack(attack_id: String):
 	return null
 
 func can_attack() -> bool:
-	return attack_cooldown <= 0.0 and not is_dead
+	return attack_cooldown <= 0.0 and can_perform_action("attack")
 
 func start_attack(attack_id: String) -> bool:
 	if not can_attack():

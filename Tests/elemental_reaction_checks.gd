@@ -14,7 +14,7 @@ func _run_checks() -> void:
 	failures += _check_element_charge_expires_after_inactivity()
 	failures += _check_reaction_strength_resets_after_inactivity()
 	failures += _check_damage_type_resistances()
-	failures += _check_water_and_air_environment_reactions()
+	failures += _check_water_environment_reactions()
 
 	if failures == 0:
 		print("Elemental reaction checks: PASS")
@@ -158,7 +158,6 @@ func _check_damage_type_resistances() -> int:
 			"ether": 0.4,
 			"ice": 0.5,
 			"water": 0.9,
-			"air": 0.9,
 			"unknown": 0.9
 		}
 	})
@@ -200,12 +199,11 @@ func _check_damage_type_resistances() -> int:
 	enemy.free()
 	return 0
 
-func _check_water_and_air_environment_reactions() -> int:
+func _check_water_environment_reactions() -> int:
 	var resolver := ElementalReactionResolver.new()
 	var cases: Array[Dictionary] = [
 		{"primed": ElementalTypes.ElementType.FIRE, "trigger": ElementalTypes.ElementType.WATER, "reaction": "neutralization"},
 		{"primed": ElementalTypes.ElementType.ELECTRIC, "trigger": ElementalTypes.ElementType.WATER, "reaction": "chain_conductivity"},
-		{"primed": ElementalTypes.ElementType.FIRE, "trigger": ElementalTypes.ElementType.AIR, "reaction": "ignition"}
 	]
 	for test_case in cases:
 		var gauge := ElementalGauge.new()
@@ -214,4 +212,7 @@ func _check_water_and_air_environment_reactions() -> int:
 		if result.get("reaction") != test_case["reaction"]:
 			print("FAIL: environmental element should trigger %s" % test_case["reaction"])
 			return 1
+	if ElementalTypes.from_string("air") != ElementalTypes.ElementType.NONE:
+		print("FAIL: removed air element should not be recognized")
+		return 1
 	return 0
