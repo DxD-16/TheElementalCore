@@ -1,286 +1,206 @@
 extends SceneTree
 
-class ChestStub:
-	extends Node
-	var chest_name: String = "Test Chest"
-
 func _initialize() -> void:
 	call_deferred("_run_checks")
 
 func _run_checks() -> void:
-	root.size = Vector2i(1920, 1080)
 	var host := Node2D.new()
 	root.add_child(host)
 	var player := Node2D.new()
 	player.name = "Player"
 	player.add_to_group("Player")
-	var inventory_data := InventoryData.new()
-	inventory_data.name = "InventoryData"
-	player.add_child(inventory_data)
-	var health_component := HealthComponent.new()
-	player.add_child(health_component)
+	var inventory := InventoryData.new()
+	inventory.name = "InventoryData"
+	inventory.slot_count = 24
+	player.add_child(inventory)
+	var health := HealthComponent.new()
+	player.add_child(health)
 	host.add_child(player)
 	var canvas_layer := CanvasLayer.new()
 	host.add_child(canvas_layer)
+
 	var ui_scene := load("res://Scenes/ui/inventory_ui.tscn") as PackedScene
 	if ui_scene == null:
-		print("FAIL: inventory UI scene should load")
-		await _finish_test(host, 1)
+		await _finish(host, 1, "Inventory UI scene should load")
 		return
 	var ui := ui_scene.instantiate() as InventoryUI
 	canvas_layer.add_child(ui)
 	await process_frame
 	await process_frame
-	ui.open_player_only()
-	await process_frame
 
-	var panels := ui.get_node("Center/Panels") as HBoxContainer
-	if panels == null or panels.get_child_count() != 3:
-		print("FAIL: the inventory should have three vertical panels")
-		await _finish_test(host, 1)
+	if inventory.slots.size() != 24 or inventory.equipment_storage_slots.size() != 15:
+		await _finish(host, 1, "Inventory should initialize both storage grids")
 		return
-	if ui.player_grid.get_child_count() != inventory_data.slots.size():
-		print("FAIL: an empty inventory should still display every slot")
-		await _finish_test(host, 1)
+	if ui.main_slot_buttons.size() != 24 or ui.equipment_slot_buttons.size() != 15:
+		await _finish(host, 1, "UI grids should match the inventory storage capacities")
 		return
-	for slot_button in ui.player_grid.get_children():
-		var button := slot_button as Button
-		if button.text.strip_edges() != "":
-			print("FAIL: empty inventory slots should be visually empty")
-			await _finish_test(host, 1)
-			return
-		if button.custom_minimum_size.x <= 0.0 or button.custom_minimum_size.y <= 0.0 \
-		or button.size.x < button.custom_minimum_size.x or button.size.y < button.custom_minimum_size.y:
-			print("FAIL: empty inventory slots should keep their scene-defined size")
-			await _finish_test(host, 1)
-			return
-	var panel_layout_rect := panels.get_global_rect()
-	if panel_layout_rect.size.x <= 0.0 or panel_layout_rect.size.y <= 0.0 \
-	or not Rect2(Vector2.ZERO, Vector2(1920.0, 1080.0)).encloses(panel_layout_rect):
-		print("FAIL: panel layout rect is outside the viewport: %s" % panel_layout_rect)
-		await _finish_test(host, 1)
-		return
-	var player_scroll := ui.get_node("Center/Panels/InventoryPanel/Margin/Content/PlayerInventoryPanel/Margin/Content/Scroll") as ScrollContainer
-	var equipment_scroll := ui.get_node("Center/Panels/EquipmentPanel/Margin/Content/GearPanel/Margin/Scroll") as ScrollContainer
-	var first_slot := ui.player_grid.get_child(0) as Control
-	if player_scroll.size.y < 200.0 \
-	or equipment_scroll.size.y < 200.0 \
-	or first_slot.size.x < first_slot.custom_minimum_size.x \
-	or first_slot.size.y < first_slot.custom_minimum_size.y \
-	or not player_scroll.get_global_rect().intersects(first_slot.get_global_rect()):
-		print("FAIL: inventory/equipment sections must expand and show real slot controls")
-		await _finish_test(host, 1)
-		return
-	if ui.equipment_slots.size() != 15:
-		print("FAIL: the equipment slot count is incorrect")
-		await _finish_test(host, 1)
-		return
-	var weapon_slot: Button = ui.equipment_slots["primary_weapon"]
-	var accessory_slot: Button = ui.equipment_slots["accessory_2"]
-	var stone_slot: Button = ui.equipment_slots["primary_weapon_stone"]
-	if weapon_slot.custom_minimum_size.x <= accessory_slot.custom_minimum_size.x \
-	or accessory_slot.custom_minimum_size.x <= stone_slot.custom_minimum_size.x:
-		print("FAIL: weapon, accessory and stone slots should use descending sizes")
-		await _finish_test(host, 1)
-		return
-	if ui.close_button.get_parent().get_parent().get_parent().get_parent() != panels.get_child(2):
-		print("FAIL: the close button should be inside the third panel")
-		await _finish_test(host, 1)
-		return
-	if ui.equipment_slots["primary_weapon"].get_parent() != ui.equipment_slots["primary_weapon_stone"].get_parent() \
-	or ui.equipment_slots["accessory_0"].get_parent() != ui.equipment_slots["accessory_stone_0"].get_parent():
-		print("FAIL: stone slots should appear next to their equipment carriers")
-		await _finish_test(host, 1)
+	if ui.physical_equipment_buttons.size() != 12:
+		await _finish(host, 1, "UI should expose two weapon slots, four stone slots and six accessory slots")
 		return
 
-	var catalog := root.get_node_or_null("ItemCatalogService") as ItemCatalog
-	var health_potion := catalog.get_definition("health_potion") if catalog else null
-	var big_health_potion := catalog.get_definition("big_health_potion") if catalog else null
-	if health_potion == null or big_health_potion == null \
-	or not health_potion.behavior is HealItemBehavior \
-	or not big_health_potion.behavior is HealItemBehavior \
-	or health_potion.behavior == big_health_potion.behavior \
-	or (health_potion.behavior as HealItemBehavior).heal_amount != 50 \
-	or (big_health_potion.behavior as HealItemBehavior).heal_amount != 100:
-		print("FAIL: scanned item resources should keep separate per-item behavior values")
-		await _finish_test(host, 1)
-		return
-	health_component.current_health = 0
-	var potion_instance := ItemInstance.new()
-	potion_instance.definition = health_potion
-	if not health_potion.behavior.use(player, potion_instance) or health_component.current_health != 50:
-		print("FAIL: loaded healing behavior should apply its resource-configured amount")
-		await _finish_test(host, 1)
-		return
-	var catalog_inventory := InventoryData.new()
-	catalog_inventory.slot_count = 2
-	host.add_child(catalog_inventory)
-	await process_frame
-	if catalog_inventory.add_item_by_id("health_potion", 12) != 0 \
-	or catalog_inventory.slots[0].quantity != 10 \
-	or catalog_inventory.slots[1].quantity != 2:
-		print("FAIL: inventory should resolve scanned definitions and preserve stack limits")
-		await _finish_test(host, 1)
-		return
-
-	var inventory := inventory_data
 	var weapon_definition := WeaponItemDefinition.new()
 	weapon_definition.id = "test_weapon"
 	weapon_definition.item_name = "Test Weapon"
-	weapon_definition.weapon_definition = (load("res://Resources/Weapons/light_sword.tres") as WeaponData).duplicate() as WeaponData
-	weapon_definition.weapon_definition.id = "test_equipped_weapon"
-	var weapon := ItemInstance.new()
-	weapon.definition = weapon_definition
-	var backup_definition := WeaponItemDefinition.new()
-	backup_definition.id = "backup_weapon"
-	backup_definition.item_name = "Backup Weapon"
-	backup_definition.weapon_definition = weapon_definition.weapon_definition.duplicate() as WeaponData
-	backup_definition.weapon_definition.id = "test_backup_weapon"
-	var backup_weapon := ItemInstance.new()
-	backup_weapon.definition = backup_definition
-	var stone_definition := StoneItemDefinition.new()
-	stone_definition.id = "test_stone"
-	stone_definition.item_name = "Test Stone"
-	var stone := ItemInstance.new()
-	stone.definition = stone_definition
-	var accessory_stone := ItemInstance.new()
-	accessory_stone.definition = stone_definition
+	weapon_definition.weapon_definition = WeaponData.new()
+	var weapon_item := ItemInstance.new()
+	weapon_item.definition = weapon_definition
 	var accessory_definition := AccessoryItemDefinition.new()
 	accessory_definition.id = "test_accessory"
 	accessory_definition.item_name = "Test Accessory"
-	var accessory := ItemInstance.new()
-	accessory.definition = accessory_definition
-	if not inventory.set_equipment_item("primary_weapon", weapon) \
-	or not inventory.set_equipment_item("backup_weapon", backup_weapon) \
-	or not inventory.set_equipment_item("primary_weapon_stone", stone) \
-	or not inventory.set_equipment_item("accessory_0", accessory) \
-	or not inventory.set_equipment_item("accessory_stone_0", accessory_stone):
-		print("FAIL: valid gear and stone items should fit their matching equipment slots")
-		await _finish_test(host, 1)
+	var accessory_item := ItemInstance.new()
+	accessory_item.definition = accessory_definition
+	var stone_definition := StoneItemDefinition.new()
+	stone_definition.id = "test_stone"
+	stone_definition.item_name = "Test Stone"
+	var stone_item := ItemInstance.new()
+	stone_item.definition = stone_definition
+
+	if not inventory.set_equipment_item("primary_weapon", weapon_item) \
+	or not inventory.set_equipment_item("accessory_0", accessory_item) \
+	or not inventory.set_equipment_item("primary_weapon_stone", stone_item):
+		await _finish(host, 1, "Each equipment type should fit its matching slot")
 		return
-	var equipped_backup_definition := inventory.backup_weapon.definition as WeaponItemDefinition
-	if equipped_backup_definition == null or equipped_backup_definition.weapon_definition.id != "test_backup_weapon":
-		print("FAIL: the backup weapon equipment slot should keep its weapon definition")
-		await _finish_test(host, 1)
+	if inventory.set_equipment_item("accessory_1", weapon_item) \
+	or inventory.set_equipment_item("primary_weapon", accessory_item) \
+	or inventory.set_equipment_item("accessory_2", stone_item) \
+	or inventory.set_equipment_item("primary_weapon_stone", accessory_item):
+		await _finish(host, 1, "Equipment slots should reject incompatible item types")
+		return
+	if inventory.get_equipment_item("primary_weapon") != weapon_item \
+	or inventory.get_equipment_item("accessory_0") != accessory_item \
+	or inventory.get_equipment_item("primary_weapon_stone") != stone_item:
+		await _finish(host, 1, "Rejected equipment should not change equipped items")
 		return
 
-	var inventory_weapon := ItemInstance.new()
-	inventory_weapon.definition = weapon_definition.duplicate() as WeaponItemDefinition
-	inventory.slots[0].set_slot(inventory_weapon, 1)
-	inventory.slots[1].set_slot(stone, 1)
-	var replacement_definition := weapon_definition.duplicate() as WeaponItemDefinition
-	replacement_definition.id = "replacement_weapon"
-	replacement_definition.item_name = "Replacement Weapon"
-	var replacement_weapon := ItemInstance.new()
-	replacement_weapon.definition = replacement_definition
-	inventory.slots[2].set_slot(replacement_weapon, 1)
-	inventory.inventory_changed.emit()
-	ui._handle_left_click(inventory, 2)
-	ui._on_equipment_slot_pressed("primary_weapon")
-	if inventory.get_equipment_item("primary_weapon") != replacement_weapon or ui.held_item != weapon:
-		print("FAIL: inventory items should transfer into equipment slots by clicking")
-		await _finish_test(host, 1)
+	ui._handle_physical_equipment_click("primary_weapon")
+	if ui.held_item != weapon_item or ui.held_quantity != 1 \
+	or inventory.get_equipment_item("primary_weapon") != null:
+		await _finish(host, 1, "Clicking an equipped item should pick it up")
 		return
-	ui._handle_left_click(inventory, 2)
-	if ui.held_item != null:
-		print("FAIL: swapping an equipped item should allow returning it to the inventory")
-		await _finish_test(host, 1)
+	ui._handle_physical_equipment_click("accessory_0")
+	if ui.held_item != weapon_item \
+	or inventory.get_equipment_item("accessory_0") != accessory_item:
+		await _finish(host, 1, "Invalid equipment attempts should preserve the held item")
 		return
-	ui._select_category("weapon")
-	await process_frame
-	var visible_item_count := 0
-	for slot_button in ui.player_grid.get_children():
-		if (slot_button as Button).text.strip_edges() != "":
-			visible_item_count += 1
-	if visible_item_count != 2 or ui.player_grid.get_child_count() != 48:
-		print("FAIL: category filters should update existing scene slots")
-		await _finish_test(host, 1)
-		return
-	ui._select_category("all")
-	await process_frame
-	if ui.player_grid.get_child_count() != inventory.slots.size():
-		print("FAIL: the all-items filter should retain empty inventory slots")
-		await _finish_test(host, 1)
-		return
-	ui.open_player_only()
-	await process_frame
-	if ui.chest_title.text != "Craftables — Coming Soon":
-		print("FAIL: craftables should be a placeholder when no chest is open")
-		await _finish_test(host, 1)
-		return
-	var panel_positions: Array[Vector2] = []
-	for panel_content in panels.get_children():
-		var panel := panel_content as Control
-		if panel.custom_minimum_size.x <= 0.0 or panel.custom_minimum_size.y <= 0.0 \
-		or panel.size.x < panel.custom_minimum_size.x or panel.size.y < panel.custom_minimum_size.y:
-			print("FAIL: inventory panel size is %s (minimum %s)" % [panel.size, panel.custom_minimum_size])
-			await _finish_test(host, 1)
-			return
-		panel_positions.append(panel.position)
-	ui._on_inventory_slot_hovered(inventory, 0)
-	if ui.description_title.text != "Test Weapon":
-		print("FAIL: hovering an item should update the item details panel")
-		await _finish_test(host, 1)
+	ui._handle_physical_equipment_click("backup_weapon")
+	if ui.held_item != null or inventory.get_equipment_item("backup_weapon") != weapon_item:
+		await _finish(host, 1, "A held weapon should equip into a compatible empty slot")
 		return
 
-	var consumable_definition := ConsumableItemDefinition.new()
-	consumable_definition.id = "test_consumable"
-	consumable_definition.item_name = "Test Consumable"
-	var heal_behavior := HealItemBehavior.new()
-	heal_behavior.heal_amount = 1
-	consumable_definition.behavior = heal_behavior
-	var consumable := ItemInstance.new()
-	consumable.definition = consumable_definition
-	if not inventory.set_equipment_item("consumable_0", consumable):
-		print("FAIL: consumables should fit their quick-use equipment slots")
-		await _finish_test(host, 1)
+	var catalog := root.get_node_or_null("ItemCatalogService") as ItemCatalog
+	var potion_definition := catalog.get_definition("health_potion") if catalog else null
+	if potion_definition == null:
+		await _finish(host, 1, "Health potion definition should load from the item catalog")
 		return
-	health_component.current_health = 0
-	var use_event := InputEventMouseButton.new()
-	use_event.button_index = MOUSE_BUTTON_RIGHT
-	use_event.pressed = true
-	ui._on_equipment_slot_input(use_event, "consumable_0")
-	if inventory.get_equipment_item("consumable_0") != null or health_component.current_health != 1:
-		print("FAIL: right-clicking an equipped consumable should apply its behavior and clear it")
-		await _finish_test(host, 1)
+	if inventory.add_item_by_id("health_potion", 12) != 0:
+		await _finish(host, 1, "Equipment storage should accept the full potion stack")
+		return
+	if inventory.equipment_storage_slots[0].quantity != 10 \
+	or inventory.equipment_storage_slots[1].quantity != 2 \
+	or not inventory.slots[0].is_empty():
+		await _finish(host, 1, "Weapons, stones, accessories and consumables should use equipment storage")
 		return
 
-	var chest := ChestStub.new()
-	var chest_inventory := InventoryData.new()
-	chest_inventory.slot_count = 3
-	chest_inventory.name = "InventoryData"
-	chest.add_child(chest_inventory)
-	host.add_child(chest)
-	await process_frame
-	chest_inventory.slots[0].set_slot(stone, 1)
-	ui.open_chest(chest)
-	await process_frame
-	var chest_first_slot := ui.chest_grid.get_child(0) as Button
-	if ui.chest_title.text != "Test Chest Contents" \
-	or ui.chest_grid.get_child_count() != 20 \
-	or not chest_first_slot.visible \
-	or (ui.chest_grid.get_child(3) as Button).visible \
-	or chest_first_slot.text != "Test Stone" or not ui.chest_scroll.visible:
-		print("FAIL: opening a chest should update existing scene slots")
-		await _finish_test(host, 1)
+	ui._handle_right_click("equipment", 0)
+	if ui.held_quantity != 5 or inventory.equipment_storage_slots[0].quantity != 5:
+		await _finish(host, 1, "Right-click should take the upper half of a stack")
 		return
-	for index in range(panels.get_child_count()):
-		var panel := panels.get_child(index) as Control
-		if panel.position != panel_positions[index]:
-			print("FAIL: opening a chest should not move the inventory panels")
-			await _finish_test(host, 1)
-			return
-	ui.close_chest()
-	if ui.chest_title.text != "Craftables — Coming Soon" \
-	or not ui.chest_placeholder.visible or ui.chest_scroll.visible:
-		print("FAIL: closing a chest should restore the craftables placeholder")
-		await _finish_test(host, 1)
+	ui._handle_left_click("equipment", 2)
+	if ui.held_quantity != 4 or inventory.equipment_storage_slots[2].quantity != 1:
+		await _finish(host, 1, "Left-click on an empty cell should place one item")
+		return
+	ui._handle_left_click("main", 2)
+	if ui.held_quantity != 4 or not inventory.slots[2].is_empty():
+		await _finish(host, 1, "Equipment items should not move into the main inventory")
+		return
+
+	var quest_definition := QuestItemDefinition.new()
+	quest_definition.id = "test_quest_item"
+	quest_definition.item_name = "Test Quest Item"
+	var quest_item := ItemInstance.new()
+	quest_item.definition = quest_definition
+	if inventory.add_item_instance(quest_item, 1) != 0 \
+	or inventory.slots[0].item.id != "test_quest_item":
+		await _finish(host, 1, "Quest items should use the main inventory")
+		return
+
+	ui._transfer_quick_consumable(0)
+	var equipped_potion := inventory.get_equipment_item("consumable_0")
+	if equipped_potion == null or equipped_potion.id != "health_potion" \
+	or inventory.get_equipment_quantity("consumable_0") != 4 or ui.held_quantity != 0:
+		await _finish(host, 1, "Held consumables should be assignable to quick-use slots")
+		return
+
+	health.current_health = 0
+	if not inventory.use_equipped_consumable(0) or health.current_health != 50:
+		await _finish(host, 1, "Quick-use consumables should apply their configured behavior")
+		return
+	if inventory.get_equipment_quantity("consumable_0") != 3:
+		await _finish(host, 1, "Using a quick consumable should decrement its quantity")
+		return
+
+	var open_event := InputEventKey.new()
+	open_event.pressed = true
+	open_event.physical_keycode = KEY_I
+	Input.parse_input_event(open_event)
+	await process_frame
+	if not ui.visible or not paused:
+		await _finish(host, 1, "I should open inventory and pause the game")
+		return
+	if not ui._is_transitioning or ui.panels.position.y <= 0.0:
+		await _finish(host, 1, "Opening should animate the panels up from below the screen")
+		return
+	await create_timer(0.35, true).timeout
+	if ui._is_transitioning or not is_equal_approx(ui.panels.position.y, 0.0):
+		await _finish(host, 1, "Opening transition should finish in 0.3 seconds")
+		return
+
+	var next_event := InputEventKey.new()
+	next_event.pressed = true
+	next_event.physical_keycode = KEY_D
+	Input.parse_input_event(next_event)
+	await process_frame
+	if ui._active_window_index != 2 or not ui._is_transitioning:
+		await _finish(host, 1, "D should start a horizontal transition to the next panel")
+		return
+	await create_timer(0.35, true).timeout
+	if not is_equal_approx(ui.panels.position.x, -1920.0):
+		await _finish(host, 1, "Next panel should slide into view")
+		return
+
+	var previous_event := InputEventKey.new()
+	previous_event.pressed = true
+	previous_event.physical_keycode = KEY_A
+	Input.parse_input_event(previous_event)
+	await process_frame
+	if ui._active_window_index != 1:
+		await _finish(host, 1, "A should select the previous panel")
+		return
+	await create_timer(0.35, true).timeout
+	if not is_equal_approx(ui.panels.position.x, -960.0):
+		await _finish(host, 1, "Previous panel should slide back into view")
+		return
+
+	var close_event := InputEventKey.new()
+	close_event.pressed = true
+	close_event.physical_keycode = KEY_TAB
+	Input.parse_input_event(close_event)
+	await process_frame
+	if not ui.visible or not ui._is_transitioning or not paused \
+	or ui.panels.position.y <= 0.0:
+		await _finish(host, 1, "Closing should animate the panels down without resuming early")
+		return
+	await create_timer(0.35, true).timeout
+	if ui.visible or paused:
+		await _finish(host, 1, "Tab should close inventory and restore the previous pause state")
 		return
 
 	print("Inventory layout checks: PASS")
-	await _finish_test(host, 0)
+	await _finish(host, 0)
 
-func _finish_test(host: Node, exit_code: int) -> void:
+func _finish(host: Node, exit_code: int, failure: String = "") -> void:
+	if not failure.is_empty():
+		print("FAIL: %s" % failure)
 	host.queue_free()
 	await process_frame
 	quit(exit_code)

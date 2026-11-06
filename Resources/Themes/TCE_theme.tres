@@ -1,7 +1,7 @@
 [gd_resource type="Theme" format=3 uid="uid://bstuxungjhun6"]
 
-[ext_resource type="Texture2D" uid="uid://bi6hnpol1tcd5" path="res://Sprites/ui/Inventory/InventorySlotHover.png" id="1_2igaj"]
-[ext_resource type="Texture2D" uid="uid://bg4xs8ji6cwxn" path="res://Sprites/ui/Inventory/InventorySlot.png" id="2_h65q1"]
+[ext_resource type="Texture2D" uid="uid://1lyuxfrbq7r4" path="res://Sprites/ui/Inventory/SlotFrame_focus.png" id="1_2igaj"]
+[ext_resource type="Texture2D" uid="uid://bwqlf7d2dlw64" path="res://Sprites/ui/Inventory/SlotFrame_default.png.png" id="2_h65q1"]
 [ext_resource type="Texture2D" uid="uid://ds6rfenkdoirj" path="res://Sprites/ui/Inventory/InventorySlotSelected.png" id="3_y62a3"]
 [ext_resource type="FontFile" uid="uid://dnl8hqx2fv4sq" path="res://Fonts/jersey15-regular.ttf" id="4_2scp5"]
 
@@ -15,19 +15,19 @@ border_color = Color(0.6691057, 0.008162398, 0.31040424, 1)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_r0iyd"]
 texture = ExtResource("1_2igaj")
-texture_margin_left = 8.0
-texture_margin_top = 8.0
-texture_margin_right = 8.0
-texture_margin_bottom = 8.0
-region_rect = Rect2(0, 0, 36, 36)
+texture_margin_left = 1.9530182
+texture_margin_top = 2.3487082
+texture_margin_right = 2.1508636
+texture_margin_bottom = 16.0
+region_rect = Rect2(0, 0, 72, 72)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_oac4r"]
 texture = ExtResource("2_h65q1")
-texture_margin_left = 8.0
-texture_margin_top = 8.0
-texture_margin_right = 8.0
-texture_margin_bottom = 8.0
-region_rect = Rect2(0, 0, 36, 36)
+texture_margin_left = 2.1873682
+texture_margin_top = 1.9673264
+texture_margin_right = 2.0434437
+texture_margin_bottom = 1.9637312
+region_rect = Rect2(0, 0, 72, 72)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6snjt"]
 texture = ExtResource("3_y62a3")

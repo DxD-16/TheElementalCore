@@ -8,22 +8,22 @@
 [node name="HealthBar" type="Marker2D" unique_id=1168271397]
 
 [node name="BarFrame" type="TextureRect" parent="." unique_id=2123751107]
-offset_right = 24.0
-offset_bottom = 6.0
+offset_right = 100.0
+offset_bottom = 11.0
 texture = ExtResource("1_7xtfk")
 stretch_mode = 2
 
 [node name="DelayHPBar" type="TextureProgressBar" parent="." unique_id=1955770911]
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 82.0
+offset_bottom = 7.0
 step = 0.5
 value = 100.0
 texture_progress = ExtResource("2_yw5b7")
 texture_progress_offset = Vector2(9, 2)
 
 [node name="MainHPBar" type="TextureProgressBar" parent="." unique_id=834864071 node_paths=PackedStringArray("delay_bar", "bar_frame")]
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 82.0
+offset_bottom = 7.0
 step = 0.5
 value = 100.0
 texture_progress = ExtResource("3_0iqeo")

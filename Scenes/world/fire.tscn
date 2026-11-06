@@ -26,10 +26,13 @@ turbulence_noise_scale = 2.0
 collision_use_scale = true
 
 [sub_resource type="Gradient" id="Gradient_mai8y"]
+offsets = PackedFloat32Array(0, 0.7116788)
 colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 0)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_2j2di"]
 gradient = SubResource("Gradient_mai8y")
+width = 128
+height = 128
 use_hdr = true
 fill = 1
 fill_from = Vector2(0.5, 0.5)
@@ -44,4 +47,11 @@ process_material = SubResource("ParticleProcessMaterial_0h8bj")
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=1248553731]
 scale = Vector2(5, 5)
 color = Color(1, 1, 0.7764706, 1)
+energy = 1.5
+range_item_cull_mask = 3
+shadow_enabled = true
+shadow_filter = 1
+shadow_filter_smooth = 4.0
+shadow_item_cull_mask = 3
 texture = SubResource("GradientTexture2D_2j2di")
+height = 10.0

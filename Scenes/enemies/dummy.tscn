@@ -6,10 +6,6 @@
 [ext_resource type="Texture2D" uid="uid://c5fajki34a3hy" path="res://Sprites/enemies/dummy2_n.png" id="3_qs3u1"]
 [ext_resource type="PackedScene" uid="uid://c5gqtu2t2tunv" path="res://Scenes/ui/health_bar.tscn" id="4_3clv1"]
 
-[sub_resource type="CanvasTexture" id="CanvasTexture_76uhh"]
-diffuse_texture = ExtResource("2_6jun3")
-normal_texture = ExtResource("3_qs3u1")
-
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_fcnqv"]
 radius = 16.0
 height = 50.0
@@ -18,15 +14,21 @@ height = 50.0
 radius = 16.0
 height = 50.0
 
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_6jun3"]
+cull_mode = 1
+polygon = PackedVector2Array(-2, -25, -6, -21, -6, -16, -2, -12, -4, -12, -7, -9, -20, -9, -20, -6, -18, -6, -18, -4, -12, -6, -8, -6, -8, 5, -4, 9, -3, 9, -2, 10, -2, 22, -3, 22, -4, 23, -5, 23, -7, 25, 7, 25, 5, 23, 4, 23, 3, 22, 2, 22, 2, 10, 3, 9, 4, 9, 7, 6, 7, 5, 8, 5, 8, -6, 11, -6, 15, -5, 18, -4, 18, -6, 20, -6, 20, -9, 7, -9, 3, -12, 3, -13, 6, -16, 6, -21, 2, -25)
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_76uhh"]
+diffuse_texture = ExtResource("2_6jun3")
+normal_texture = ExtResource("3_qs3u1")
+
 [node name="Dummy" type="CharacterBody2D" unique_id=454250716]
 collision_layer = 4
 collision_mask = 4
 script = ExtResource("1_s0uyp")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1104906702]
-texture = SubResource("CanvasTexture_76uhh")
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=242552611]
+visible = false
 shape = SubResource("CapsuleShape2D_fcnqv")
 
 [node name="HealthComponent" type="Node" parent="." unique_id=2082194352]
@@ -45,7 +47,16 @@ scale = Vector2(0.5, 0.5)
 collision_layer = 0
 
 [node name="ContactShape" type="CollisionShape2D" parent="ContactArea" unique_id=1234567890]
+visible = false
 shape = SubResource("CapsuleShape2D_contact")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=1783704174]
+occluder = SubResource("OccluderPolygon2D_6jun3")
+occluder_light_mask = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1104906702]
+light_mask = 2
+texture = SubResource("CanvasTexture_76uhh")
 
 [connection signal="body_entered" from="ContactArea" to="." method="_on_body_entered"]
 [connection signal="body_exited" from="ContactArea" to="." method="_on_body_exited"]

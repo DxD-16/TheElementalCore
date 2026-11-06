@@ -1,7 +1,7 @@
 class_name InventoryData
 extends Node
 
-## Инвентарь (для игрока или сундука).
+## Инвентарь игрока.
 ## Хранит предметы и загружает определения из ItemCatalog.
 
 signal inventory_changed
@@ -9,8 +9,10 @@ signal item_used(item: ItemInstance)
 signal equipment_changed
 
 const DROPPED_ITEM_SCENE_PATH := "res://Scenes/items/dropped_item.tscn"
+const EQUIPMENT_ITEM_TYPES: Array[String] = ["weapon", "stone", "consumable", "accessory"]
 
 @export var slot_count: int = 48
+@export var equipment_storage_slot_count: int = 15
 @export_group("Equipment")
 @export var primary_weapon: ItemInstance
 @export var primary_weapon_stone: ItemInstance
@@ -24,6 +26,7 @@ const DROPPED_ITEM_SCENE_PATH := "res://Scenes/items/dropped_item.tscn"
 const ACCESSORY_STONE_SLOT_INDICES: Array[int] = [0, 1]
 
 var slots: Array[InventorySlot] = []
+var equipment_storage_slots: Array[InventorySlot] = []
 
 ## Реестр всех известных предметов (id → ItemDefinition)
 var item_registry: Dictionary = {}
@@ -77,8 +80,11 @@ func use_equipped_consumable(index: int) -> bool:
 
 func _init_slots() -> void:
 	slots.clear()
-	for i in slot_count:
+	for i in range(slot_count):
 		slots.append(InventorySlot.new())
+	equipment_storage_slots.clear()
+	for i in range(equipment_storage_slot_count):
+		equipment_storage_slots.append(InventorySlot.new())
 
 func _load_item_registry() -> void:
 	item_registry.clear()
@@ -91,6 +97,9 @@ func _load_item_registry() -> void:
 
 func get_item_data(item_id: String) -> ItemDefinition:
 	return item_registry.get(item_id) as ItemDefinition
+
+func is_equipment_item(item: ItemInstance) -> bool:
+	return item != null and item.type in EQUIPMENT_ITEM_TYPES
 
 func get_equipment_item(slot_id: String) -> ItemInstance:
 	match slot_id:
@@ -118,7 +127,7 @@ func get_equipment_quantity(slot_id: String) -> int:
 	return 1 if get_equipment_item(slot_id) != null else 0
 
 func set_equipment_item(slot_id: String, item: ItemInstance, quantity: int = 1) -> bool:
-	if item != null and not _is_item_valid_for_equipment_slot(slot_id, item):
+	if item != null and not is_item_valid_for_equipment_slot(slot_id, item):
 		return false
 	match slot_id:
 		"primary_weapon":
@@ -147,7 +156,9 @@ func set_equipment_item(slot_id: String, item: ItemInstance, quantity: int = 1) 
 	equipment_changed.emit()
 	return true
 
-func _is_item_valid_for_equipment_slot(slot_id: String, item: ItemInstance) -> bool:
+func is_item_valid_for_equipment_slot(slot_id: String, item: ItemInstance) -> bool:
+	if item == null or item.definition == null:
+		return false
 	match slot_id:
 		"primary_weapon", "backup_weapon":
 			var weapon_definition := item.definition as WeaponItemDefinition
@@ -188,18 +199,28 @@ func add_item(definition: ItemDefinition, amount: int = 1) -> int:
 func add_item_instance(item: ItemInstance, amount: int = 1) -> int:
 	if item == null or item.definition == null or amount <= 0:
 		return amount
+	var destination: Array[InventorySlot] = slots
+	if is_equipment_item(item):
+		destination = equipment_storage_slots
+	return _add_item_to_slots(destination, item, amount)
+
+func _add_item_to_slots(
+	destination: Array[InventorySlot],
+	item: ItemInstance,
+	amount: int
+) -> int:
 	var remaining := amount
 
 	# Сначала заполняем уже существующие стаки
 	if item.stackable:
-		for slot in slots:
+		for slot in destination:
 			if remaining <= 0:
 				break
 			if not slot.is_empty() and slot.item.id == item.id:
 				remaining = slot.add(item, remaining)
 
 	# Затем пустые слоты
-	for slot in slots:
+	for slot in destination:
 		if remaining <= 0:
 			break
 		if slot.is_empty():
@@ -213,7 +234,7 @@ func remove_item(item_id: String, amount: int = 1) -> int:
 	## Убирает предмет. Возвращает сколько реально убрано.
 	var to_remove := amount
 	var removed_total := 0
-	for slot in slots:
+	for slot in _all_storage_slots():
 		if to_remove <= 0:
 			break
 		if not slot.is_empty() and slot.item.id == item_id:
@@ -230,10 +251,16 @@ func has_item(item_id: String, amount: int = 1) -> bool:
 
 func get_item_count(item_id: String) -> int:
 	var total := 0
-	for slot in slots:
+	for slot in _all_storage_slots():
 		if not slot.is_empty() and slot.item.id == item_id:
 			total += slot.quantity
 	return total
+
+func _all_storage_slots() -> Array[InventorySlot]:
+	var all_slots: Array[InventorySlot] = []
+	all_slots.append_array(slots)
+	all_slots.append_array(equipment_storage_slots)
+	return all_slots
 
 func swap_slots(idx_a: int, idx_b: int) -> void:
 	if idx_a < 0 or idx_a >= slots.size() or idx_b < 0 or idx_b >= slots.size():
@@ -317,24 +344,6 @@ func place_one(slot_index: int, held_item: ItemInstance) -> bool:
 		return true
 	elif slot.item.id == held_item.id and slot.item.stackable and slot.quantity < slot.item.max_stack:
 		slot.quantity += 1
-		inventory_changed.emit()
-		return true
-	return false
-
-func quick_transfer(slot_index: int, target_inv: InventoryData) -> bool:
-	## Быстрое перемещение предмета из slot_index в целевой инвентарь (Shift+Click).
-	if slot_index < 0 or slot_index >= slots.size() or target_inv == null:
-		return false
-	var slot := slots[slot_index]
-	if slot.is_empty():
-		return false
-
-	var leftover := target_inv.add_item_instance(slot.item, slot.quantity)
-	if leftover < slot.quantity:
-		if leftover <= 0:
-			slot.clear()
-		else:
-			slot.quantity = leftover
 		inventory_changed.emit()
 		return true
 	return false

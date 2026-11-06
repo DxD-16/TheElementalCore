@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://3pllp4n1qy2d"
-path="res://.godot/imported/New_Idle.png-67d765f4d845ff75242cdc2573f079f0.ctex"
+uid="uid://xds31ic3kde3"
+path="res://.godot/imported/chest_diffuse.png-d18aaea36ad11ba96918888dc0ecac15.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Animations/player/Maxim's new animations/New_Idle.png"
-dest_files=["res://.godot/imported/New_Idle.png-67d765f4d845ff75242cdc2573f079f0.ctex"]
+source_file="res://Sprites/world/chest/chest_diffuse.png"
+dest_files=["res://.godot/imported/chest_diffuse.png-d18aaea36ad11ba96918888dc0ecac15.ctex"]
 
 [params]
 

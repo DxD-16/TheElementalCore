@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dpo5o8t18p5c2"
-path="res://.godot/imported/Jump_Max.png-8983b963ddb8563badcd418375b5d144.ctex"
+uid="uid://ch1gdhvf4pdh7"
+path="res://.godot/imported/chest_specular.png-e46cc49629dc7106d6709f0ee67bdb75.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Animations/player/Maxim'sAnimations/Jump_Max.png"
-dest_files=["res://.godot/imported/Jump_Max.png-8983b963ddb8563badcd418375b5d144.ctex"]
+source_file="res://Sprites/world/chest/chest_specular.png"
+dest_files=["res://.godot/imported/chest_specular.png-e46cc49629dc7106d6709f0ee67bdb75.ctex"]
 
 [params]
 

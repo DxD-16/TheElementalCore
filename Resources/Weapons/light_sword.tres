@@ -294,6 +294,6 @@ metadata/_custom_type_script = "uid://0iqs5scjvosq"
 script = ExtResource("2_o5xog")
 id = "light_sword"
 display_name = "Light Sword"
-element = "Electric"
+element = "Ice"
 attacks = Array[ExtResource("1_f2fyj")]([SubResource("Resource_jnxi4"), SubResource("Resource_m1efj"), SubResource("Resource_7j84g"), SubResource("Resource_vi55g")])
 metadata/_custom_type_script = "uid://b08aiss43668u"

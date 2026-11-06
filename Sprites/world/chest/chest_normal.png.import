@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bi6hnpol1tcd5"
-path="res://.godot/imported/InventorySlotHover.png-eae077d9067bc270c9a3161a1bb6c76c.ctex"
+uid="uid://d72butvx4xs2"
+path="res://.godot/imported/chest_normal.png-7b9ea68c3c4aa5daed00e1193b12dd53.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Sprites/ui/Inventory/InventorySlotHover.png"
-dest_files=["res://.godot/imported/InventorySlotHover.png-eae077d9067bc270c9a3161a1bb6c76c.ctex"]
+source_file="res://Sprites/world/chest/chest_normal.png"
+dest_files=["res://.godot/imported/chest_normal.png-7b9ea68c3c4aa5daed00e1193b12dd53.ctex"]
 
 [params]
 

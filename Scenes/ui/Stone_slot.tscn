@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cfafpf2ebda8q"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yoeoa"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[node name="InventorySlot" type="Button" unique_id=231035076]
+custom_minimum_size = Vector2(32, 32)
+size_flags_horizontal = 0
+size_flags_vertical = 0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_yoeoa")
+clip_text = true

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://byo8p5kgeoscf"
-path="res://.godot/imported/chest_closed.png-2f5a53d106e3b02345512aaab7d95081.ctex"
+uid="uid://bwqlf7d2dlw64"
+path="res://.godot/imported/SlotFrame_default.png.png-bfe15fdc695658656e3a6d655c6ec0bc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Sprites/world/chest_closed.png"
-dest_files=["res://.godot/imported/chest_closed.png-2f5a53d106e3b02345512aaab7d95081.ctex"]
+source_file="res://Sprites/ui/Inventory/SlotFrame_default.png.png"
+dest_files=["res://.godot/imported/SlotFrame_default.png.png-bfe15fdc695658656e3a6d655c6ec0bc.ctex"]
 
 [params]
 
